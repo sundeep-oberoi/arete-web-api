@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.arete.webapi.AreteWebApiApplicationTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 22.29 s -- in com.arete.webapi.AreteWebApiApplicationTests
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 22.74 s -- in com.arete.webapi.AreteWebApiApplicationTests
