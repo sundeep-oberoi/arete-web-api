@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>FormRecord.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">arete-web-api</a> &gt; <a href="index.source.html" class="el_package">com.arete.webapi.model</a> &gt; <span class="el_source">FormRecord.java</span></div><h1>FormRecord.java</h1><pre class="source lang-java linenums">package com.arete.webapi.model;
+
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = &quot;form_record&quot;)
+<span class="fc" id="L9">public class FormRecord {</span>
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(name = &quot;form_number&quot;, unique = true, nullable = false)
+    private String formNumber;
+
+    @Column(name = &quot;email_address&quot;)
+    private String emailAddress;
+
+    @Column(name = &quot;profile&quot;)
+    private String profile;
+
+    @Column(name = &quot;cover_partner&quot;)
+    private boolean coverPartner;
+
+    @Column(name = &quot;cover_children&quot;)
+    private boolean coverChildren;
+
+    @Column(name = &quot;number_of_children&quot;)
+    private int numberOfChildren;
+
+    @Column(name = &quot;age&quot;)
+    private String age;
+
+    @Column(name = &quot;postcode&quot;)
+    private String postcode;
+
+    @Column(name = &quot;optical_needs&quot;)
+    private String opticalNeeds;
+
+    @Column(name = &quot;dental_needs&quot;)
+    private String dentalNeeds;
+
+    @Column(name = &quot;alternative_medicine&quot;)
+    private String alternativeMedicine;
+
+    @Column(name = &quot;hospitalisation_preference&quot;)
+    private String hospitalisationPreference;
+
+    @Column(name = &quot;doctor_choice&quot;)
+    private String doctorChoice;
+
+    @Column(name = &quot;phone_number&quot;)
+    private String phoneNumber;
+
+    @Column(name = &quot;monthly_premium&quot;)
+    private BigDecimal monthlyPremium;
+
+    @Column(name = &quot;annual_premium&quot;)
+    private BigDecimal annualPremium;
+
+    @Column(name = &quot;created_at&quot;)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+<span class="nc" id="L68">        createdAt = LocalDateTime.now();</span>
+<span class="nc" id="L69">    }</span>
+
+<span class="nc" id="L71">    public Long getId() { return id; }</span>
+<span class="nc" id="L72">    public void setId(Long id) { this.id = id; }</span>
+
+<span class="fc" id="L74">    public String getFormNumber() { return formNumber; }</span>
+<span class="fc" id="L75">    public void setFormNumber(String formNumber) { this.formNumber = formNumber; }</span>
+
+<span class="fc" id="L77">    public String getEmailAddress() { return emailAddress; }</span>
+<span class="fc" id="L78">    public void setEmailAddress(String emailAddress) { this.emailAddress = emailAddress; }</span>
+
+<span class="fc" id="L80">    public String getProfile() { return profile; }</span>
+<span class="fc" id="L81">    public void setProfile(String profile) { this.profile = profile; }</span>
+
+<span class="fc" id="L83">    public boolean isCoverPartner() { return coverPartner; }</span>
+<span class="fc" id="L84">    public void setCoverPartner(boolean coverPartner) { this.coverPartner = coverPartner; }</span>
+
+<span class="nc" id="L86">    public boolean isCoverChildren() { return coverChildren; }</span>
+<span class="fc" id="L87">    public void setCoverChildren(boolean coverChildren) { this.coverChildren = coverChildren; }</span>
+
+<span class="nc" id="L89">    public int getNumberOfChildren() { return numberOfChildren; }</span>
+<span class="fc" id="L90">    public void setNumberOfChildren(int numberOfChildren) { this.numberOfChildren = numberOfChildren; }</span>
+
+<span class="nc" id="L92">    public String getAge() { return age; }</span>
+<span class="fc" id="L93">    public void setAge(String age) { this.age = age; }</span>
+
+<span class="nc" id="L95">    public String getPostcode() { return postcode; }</span>
+<span class="fc" id="L96">    public void setPostcode(String postcode) { this.postcode = postcode; }</span>
+
+<span class="nc" id="L98">    public String getOpticalNeeds() { return opticalNeeds; }</span>
+<span class="fc" id="L99">    public void setOpticalNeeds(String opticalNeeds) { this.opticalNeeds = opticalNeeds; }</span>
+
+<span class="nc" id="L101">    public String getDentalNeeds() { return dentalNeeds; }</span>
+<span class="fc" id="L102">    public void setDentalNeeds(String dentalNeeds) { this.dentalNeeds = dentalNeeds; }</span>
+
+<span class="nc" id="L104">    public String getAlternativeMedicine() { return alternativeMedicine; }</span>
+<span class="fc" id="L105">    public void setAlternativeMedicine(String alternativeMedicine) { this.alternativeMedicine = alternativeMedicine; }</span>
+
+<span class="nc" id="L107">    public String getHospitalisationPreference() { return hospitalisationPreference; }</span>
+    public void setHospitalisationPreference(String hospitalisationPreference) {
+<span class="fc" id="L109">        this.hospitalisationPreference = hospitalisationPreference;</span>
+<span class="fc" id="L110">    }</span>
+
+<span class="nc" id="L112">    public String getDoctorChoice() { return doctorChoice; }</span>
+<span class="fc" id="L113">    public void setDoctorChoice(String doctorChoice) { this.doctorChoice = doctorChoice; }</span>
+
+<span class="nc" id="L115">    public String getPhoneNumber() { return phoneNumber; }</span>
+<span class="fc" id="L116">    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }</span>
+
+<span class="fc" id="L118">    public BigDecimal getMonthlyPremium() { return monthlyPremium; }</span>
+<span class="fc" id="L119">    public void setMonthlyPremium(BigDecimal monthlyPremium) { this.monthlyPremium = monthlyPremium; }</span>
+
+<span class="fc" id="L121">    public BigDecimal getAnnualPremium() { return annualPremium; }</span>
+<span class="fc" id="L122">    public void setAnnualPremium(BigDecimal annualPremium) { this.annualPremium = annualPremium; }</span>
+
+<span class="nc" id="L124">    public LocalDateTime getCreatedAt() { return createdAt; }</span>
+<span class="nc" id="L125">    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
