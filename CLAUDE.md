@@ -6,6 +6,7 @@ API backend component for the multistep web form.
 - Choose a base image from verified publishers
 - API component is built using Java, Spring Boot Web, & Logback frameworks
 - Add debug and info logging
+- Configure Logback to use info level
 - Use "/api/msf/" as the base path
 - Use an embedded H2 database with persistence
 - Initialize the database on first startup
