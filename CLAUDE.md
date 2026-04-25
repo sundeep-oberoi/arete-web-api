@@ -11,6 +11,7 @@ API backend component for the multistep web form.
 - Initialize the database on first startup
 - Add an environment variable to force re-initialize the database on startup
 - Keep database files on a persistent docker volume
+- Add a Spring Actuator health endpoint
 - Package as a Maven project
 - Use com.arete.webapi as the base Java package
 - Add build plugins to create a all-in-one Jar
@@ -21,5 +22,5 @@ API backend component for the multistep web form.
 - Write a "PLAN.md"
 - Write the code
 - Write tests, code coverage must be at least 60%
-- Run test to check for errors
+- Run tests to check for errors
 - Fix any errors
