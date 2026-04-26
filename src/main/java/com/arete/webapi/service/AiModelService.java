@@ -1,12 +1,11 @@
 package com.arete.webapi.service;
 
-import com.azure.ai.inference.ChatCompletionsClient;
-import com.azure.ai.inference.ChatCompletionsClientBuilder;
-import com.azure.ai.inference.models.ChatCompletions;
-import com.azure.ai.inference.models.ChatCompletionsOptions;
-import com.azure.ai.inference.models.ChatRequestSystemMessage;
-import com.azure.ai.inference.models.ChatRequestUserMessage;
-import com.azure.core.credential.AzureKeyCredential;
+import com.openai.azure.AzureOpenAIServiceVersion;
+import com.openai.azure.credential.AzureApiKeyCredential;
+import com.openai.client.OpenAIClient;
+import com.openai.client.okhttp.OpenAIOkHttpClient;
+import com.openai.models.chat.completions.ChatCompletion;
+import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import com.arete.webapi.dto.FormData;
 import com.arete.webapi.dto.ai.PremiumResult;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -16,8 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class AiModelService {
@@ -33,13 +30,16 @@ public class AiModelService {
     @Value("${model.name:}")
     private String modelName;
 
+    @Value("${model.api.version:}")
+    private String modelApiVersion;
+
     @Value("${model.system.prompt}")
     private String systemPrompt;
 
     @Value("${model.user.prompt.template}")
     private String userPromptTemplate;
 
-    private ChatCompletionsClient chatClient;
+    private OpenAIClient openAiClient;
     private final ObjectMapper objectMapper;
 
     public AiModelService(ObjectMapper objectMapper) {
@@ -49,40 +49,45 @@ public class AiModelService {
     @PostConstruct
     void initClient() {
         if (modelApiUrl != null && !modelApiUrl.isBlank()) {
-            chatClient = new ChatCompletionsClientBuilder()
-                    .credential(new AzureKeyCredential(modelApiKey))
-                    .endpoint(modelApiUrl)
-                    .buildClient();
-            log.info("Azure AI Inference client initialised for endpoint: {}", modelApiUrl);
+            AzureOpenAIServiceVersion serviceVersion = (modelApiVersion != null && !modelApiVersion.isBlank())
+                    ? AzureOpenAIServiceVersion.fromString(modelApiVersion)
+                    : AzureOpenAIServiceVersion.latestPreviewVersion();
+
+            openAiClient = OpenAIOkHttpClient.builder()
+                    .baseUrl(modelApiUrl)
+                    .credential(AzureApiKeyCredential.create(modelApiKey))
+                    .azureServiceVersion(serviceVersion)
+                    .build();
+            log.info("OpenAI client initialised for Azure AI Foundry endpoint: {} (api-version: {})",
+                    modelApiUrl, serviceVersion.value());
         } else {
             log.warn("MODEL_API_URL not configured — AI model calls will fail at runtime");
         }
     }
 
     public PremiumResult fetchPremium(FormData formData) {
-        if (chatClient == null) {
+        if (openAiClient == null) {
             throw new IllegalStateException("MODEL_API_URL is not configured");
         }
 
         String userPrompt = buildUserPrompt(formData);
-        log.info("Calling Azure AI Inference model for premium calculation");
+        log.info("Calling Azure AI Foundry model for premium calculation");
         log.debug("User prompt: {}", userPrompt);
 
-        ChatCompletionsOptions options = new ChatCompletionsOptions(List.of(
-                new ChatRequestSystemMessage(systemPrompt),
-                new ChatRequestUserMessage(userPrompt)
-        ));
-        if (modelName != null && !modelName.isBlank()) {
-            options.setModel(modelName);
-        }
+        ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
+                .model(modelName != null ? modelName : "")
+                .addSystemMessage(systemPrompt)
+                .addUserMessage(userPrompt)
+                .build();
 
-        ChatCompletions completions = chatClient.complete(options);
+        ChatCompletion completion = openAiClient.chat().completions().create(params);
 
-        if (completions == null || completions.getChoices() == null || completions.getChoices().isEmpty()) {
+        if (completion.choices().isEmpty()) {
             throw new IllegalStateException("Empty response from AI model");
         }
 
-        String content = completions.getChoices().get(0).getMessage().getContent();
+        String content = completion.choices().get(0).message().content()
+                .orElseThrow(() -> new IllegalStateException("Empty response from AI model"));
         log.debug("AI model raw response: {}", content);
 
         return parseModelResponse(content);

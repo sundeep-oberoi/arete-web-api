@@ -1,21 +1,22 @@
 package com.arete.webapi.service;
 
-import com.azure.ai.inference.ChatCompletionsClient;
-import com.azure.ai.inference.models.ChatChoice;
-import com.azure.ai.inference.models.ChatCompletions;
-import com.azure.ai.inference.models.ChatCompletionsOptions;
-import com.azure.ai.inference.models.ChatResponseMessage;
+import com.openai.client.OpenAIClient;
+import com.openai.models.chat.completions.ChatCompletion;
+import com.openai.models.chat.completions.ChatCompletionCreateParams;
+import com.openai.models.chat.completions.ChatCompletionMessage;
 import com.arete.webapi.dto.FormData;
 import com.arete.webapi.dto.ai.PremiumResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Answers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -24,8 +25,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AiModelServiceTest {
 
-    @Mock
-    private ChatCompletionsClient chatCompletionsClient;
+    @Mock(answer = Answers.RETURNS_DEEP_STUBS)
+    private OpenAIClient openAiClient;
 
     private AiModelService service;
 
@@ -41,12 +42,13 @@ class AiModelServiceTest {
         service = new AiModelService(new ObjectMapper());
         ReflectionTestUtils.setField(service, "systemPrompt", "System prompt");
         ReflectionTestUtils.setField(service, "userPromptTemplate", TEMPLATE);
-        ReflectionTestUtils.setField(service, "chatClient", chatCompletionsClient);
+        ReflectionTestUtils.setField(service, "modelName", "test-model");
+        ReflectionTestUtils.setField(service, "openAiClient", openAiClient);
     }
 
     @Test
     void fetchPremium_throwsWhenClientNotInitialised() {
-        ReflectionTestUtils.setField(service, "chatClient", null);
+        ReflectionTestUtils.setField(service, "openAiClient", null);
         assertThatThrownBy(() -> service.fetchPremium(new FormData()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("MODEL_API_URL");
@@ -56,19 +58,18 @@ class AiModelServiceTest {
     void fetchPremium_callsClientAndReturnsParsedPremium() {
         mockClientResponse("{\"monthlyPremium\": 85.5, \"annualPremium\": 1026.0}");
 
-        FormData data = buildFormData();
-        PremiumResult result = service.fetchPremium(data);
+        PremiumResult result = service.fetchPremium(buildFormData());
 
         assertThat(result.monthlyPremium()).isEqualTo(85.5);
         assertThat(result.annualPremium()).isEqualTo(1026.0);
-        verify(chatCompletionsClient).complete(any(ChatCompletionsOptions.class));
+        verify(openAiClient.chat().completions()).create(any(ChatCompletionCreateParams.class));
     }
 
     @Test
     void fetchPremium_throwsOnEmptyChoices() {
-        ChatCompletions completions = mock(ChatCompletions.class);
-        when(completions.getChoices()).thenReturn(List.of());
-        when(chatCompletionsClient.complete((ChatCompletionsOptions) any())).thenReturn(completions);
+        ChatCompletion completion = mock(ChatCompletion.class);
+        when(completion.choices()).thenReturn(List.of());
+        when(openAiClient.chat().completions().create(any(ChatCompletionCreateParams.class))).thenReturn(completion);
 
         assertThatThrownBy(() -> service.fetchPremium(buildFormData()))
                 .isInstanceOf(IllegalStateException.class)
@@ -132,16 +133,16 @@ class AiModelServiceTest {
     // ── helpers ──────────────────────────────────────────────────────────────
 
     private void mockClientResponse(String content) {
-        ChatResponseMessage message = mock(ChatResponseMessage.class);
-        when(message.getContent()).thenReturn(content);
+        ChatCompletionMessage message = mock(ChatCompletionMessage.class);
+        when(message.content()).thenReturn(Optional.of(content));
 
-        ChatChoice choice = mock(ChatChoice.class);
-        when(choice.getMessage()).thenReturn(message);
+        ChatCompletion.Choice choice = mock(ChatCompletion.Choice.class);
+        when(choice.message()).thenReturn(message);
 
-        ChatCompletions completions = mock(ChatCompletions.class);
-        when(completions.getChoices()).thenReturn(List.of(choice));
+        ChatCompletion completion = mock(ChatCompletion.class);
+        when(completion.choices()).thenReturn(List.of(choice));
 
-        when(chatCompletionsClient.complete(any(ChatCompletionsOptions.class))).thenReturn(completions);
+        when(openAiClient.chat().completions().create(any(ChatCompletionCreateParams.class))).thenReturn(completion);
     }
 
     private FormData buildFormData() {
