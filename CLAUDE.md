@@ -12,6 +12,7 @@ API backend component for the multistep web form.
 - Initialize the database on first startup
 - Add an environment variable to force re-initialize the database on startup
 - Keep database files on a persistent docker volume
+- Enable the H2 database web console on path /h2 and enable remote connections
 - Add a Spring Actuator health endpoint
 - Package as a Maven project
 - Use com.arete.webapi as the base Java package
