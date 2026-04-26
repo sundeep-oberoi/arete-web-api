@@ -17,7 +17,8 @@ API backend component for the multistep web form.
 - Package as a Maven project
 - Use com.arete.webapi as the base Java package
 - Add build plugins to create a all-in-one Jar
-- Azure Foundry models are accessed using Azure Ai Inference Java library
+- Azure Foundry models are accessed using Azure AI Inference Java library
+- Add an environment property to specify the Azure Foundry Model name 
 
 # Steps
 - Read the requirements in the file "API-SPEC.md"

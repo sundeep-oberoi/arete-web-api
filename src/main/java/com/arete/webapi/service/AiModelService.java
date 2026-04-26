@@ -30,6 +30,9 @@ public class AiModelService {
     @Value("${model.api.key:}")
     private String modelApiKey;
 
+    @Value("${model.name:}")
+    private String modelName;
+
     @Value("${model.system.prompt}")
     private String systemPrompt;
 
@@ -69,6 +72,9 @@ public class AiModelService {
                 new ChatRequestSystemMessage(systemPrompt),
                 new ChatRequestUserMessage(userPrompt)
         ));
+        if (modelName != null && !modelName.isBlank()) {
+            options.setModel(modelName);
+        }
 
         ChatCompletions completions = chatClient.complete(options);
 
