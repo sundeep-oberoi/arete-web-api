@@ -1,5 +1,5 @@
 GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
-arete-web-api,com.arete.webapi.service,AiModelService,40,228,8,12,11,50,7,11,1,7
+arete-web-api,com.arete.webapi.service,AiModelService,23,228,4,12,5,50,5,11,1,7
 arete-web-api,com.arete.webapi.service,RoomCostService,0,86,0,4,0,18,0,5,0,3
 arete-web-api,com.arete.webapi.service,FormService,5,291,5,27,5,71,5,28,0,11
 arete-web-api,com.arete.webapi.controller,FormController,0,71,1,5,0,18,1,7,0,5

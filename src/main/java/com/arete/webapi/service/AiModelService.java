@@ -1,6 +1,5 @@
 package com.arete.webapi.service;
 
-import com.openai.azure.AzureOpenAIServiceVersion;
 import com.openai.azure.credential.AzureApiKeyCredential;
 import com.openai.client.OpenAIClient;
 import com.openai.client.okhttp.OpenAIOkHttpClient;
@@ -30,9 +29,6 @@ public class AiModelService {
     @Value("${model.name:}")
     private String modelName;
 
-    @Value("${model.api.version:}")
-    private String modelApiVersion;
-
     @Value("${model.system.prompt}")
     private String systemPrompt;
 
@@ -49,17 +45,11 @@ public class AiModelService {
     @PostConstruct
     void initClient() {
         if (modelApiUrl != null && !modelApiUrl.isBlank()) {
-            AzureOpenAIServiceVersion serviceVersion = (modelApiVersion != null && !modelApiVersion.isBlank())
-                    ? AzureOpenAIServiceVersion.fromString(modelApiVersion)
-                    : AzureOpenAIServiceVersion.latestPreviewVersion();
-
             openAiClient = OpenAIOkHttpClient.builder()
                     .baseUrl(modelApiUrl)
                     .credential(AzureApiKeyCredential.create(modelApiKey))
-                    .azureServiceVersion(serviceVersion)
                     .build();
-            log.info("OpenAI client initialised for Azure AI Foundry endpoint: {} (api-version: {})",
-                    modelApiUrl, serviceVersion.value());
+            log.info("OpenAI client initialised for Azure AI Foundry endpoint: {}", modelApiUrl);
         } else {
             log.warn("MODEL_API_URL not configured — AI model calls will fail at runtime");
         }
