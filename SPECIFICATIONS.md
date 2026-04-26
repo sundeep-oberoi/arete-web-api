@@ -11,6 +11,11 @@
 
 ## Offer API
 - The /offer API calculates the offer
-- For now, return 100 Euros per month, and a 1000 Euros pre year 
-- Save all form data and offer amounts to the database
-- Use same database table as /save-leave-email API
+- First fetch the offer price from an Azure Foundry model 
+- The model name is 'Phi-4-reasoning-1'
+- Add an environment variable for the URL to the model API
+- Add an environment variable for the model API key
+- Create a system prompt to use with the model. Add an environment variable to keep the system prompt configurable
+- Create a templated user prompt with the form data elements as parameters. Add an environment variable to keep the user prompt configurable
+- Use the system and user prompt to get the offer price from the model
+- Save the form data and offer price to the database. Use same database table as /save-leave-email API

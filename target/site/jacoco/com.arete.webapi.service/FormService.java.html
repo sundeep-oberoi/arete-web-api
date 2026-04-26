@@ -2,6 +2,7 @@
 
 import com.arete.webapi.dto.FormData;
 import com.arete.webapi.dto.OfferResponse;
+import com.arete.webapi.dto.ai.PremiumResult;
 import com.arete.webapi.model.FormRecord;
 import com.arete.webapi.repository.FormRecordRepository;
 import org.slf4j.Logger;
@@ -16,16 +17,15 @@ import java.util.UUID;
 @Service
 public class FormService {
 
-<span class="fc" id="L19">    private static final Logger log = LoggerFactory.getLogger(FormService.class);</span>
-
-<span class="fc" id="L21">    private static final BigDecimal MONTHLY_PREMIUM = BigDecimal.valueOf(100.00);</span>
-<span class="fc" id="L22">    private static final BigDecimal ANNUAL_PREMIUM = BigDecimal.valueOf(1000.00);</span>
+<span class="fc" id="L20">    private static final Logger log = LoggerFactory.getLogger(FormService.class);</span>
     private static final String CURRENCY = &quot;EUR&quot;;
 
     private final FormRecordRepository formRecordRepository;
+    private final AiModelService aiModelService;
 
-<span class="fc" id="L27">    public FormService(FormRecordRepository formRecordRepository) {</span>
-<span class="fc" id="L28">        this.formRecordRepository = formRecordRepository;</span>
+<span class="fc" id="L26">    public FormService(FormRecordRepository formRecordRepository, AiModelService aiModelService) {</span>
+<span class="fc" id="L27">        this.formRecordRepository = formRecordRepository;</span>
+<span class="fc" id="L28">        this.aiModelService = aiModelService;</span>
 <span class="fc" id="L29">    }</span>
 
     public void saveLeaveEmail(String email, FormData formData) {
@@ -42,103 +42,104 @@ public class FormService {
     public OfferResponse calculateOffer(FormData formData) {
 <span class="fc" id="L43">        log.info(&quot;Calculating offer for profile={}, age={}&quot;, formData.getProfile(), formData.getAge());</span>
 
-<span class="fc" id="L45">        List&lt;String&gt; coverageDetails = buildCoverageDetails(formData);</span>
+<span class="fc" id="L45">        PremiumResult premium = aiModelService.fetchPremium(formData);</span>
+<span class="fc" id="L46">        List&lt;String&gt; coverageDetails = buildCoverageDetails(formData);</span>
 
-<span class="fc" id="L47">        FormRecord record = toFormRecord(formData);</span>
-<span class="fc" id="L48">        record.setFormNumber(UUID.randomUUID().toString());</span>
-<span class="fc" id="L49">        record.setEmailAddress(formData.getEmail());</span>
-<span class="fc" id="L50">        record.setMonthlyPremium(MONTHLY_PREMIUM);</span>
-<span class="fc" id="L51">        record.setAnnualPremium(ANNUAL_PREMIUM);</span>
+<span class="fc" id="L48">        FormRecord record = toFormRecord(formData);</span>
+<span class="fc" id="L49">        record.setFormNumber(UUID.randomUUID().toString());</span>
+<span class="fc" id="L50">        record.setEmailAddress(formData.getEmail());</span>
+<span class="fc" id="L51">        record.setMonthlyPremium(BigDecimal.valueOf(premium.monthlyPremium()));</span>
+<span class="fc" id="L52">        record.setAnnualPremium(BigDecimal.valueOf(premium.annualPremium()));</span>
 
-<span class="fc" id="L53">        formRecordRepository.save(record);</span>
-<span class="fc" id="L54">        log.debug(&quot;Saved offer record with form_number={}&quot;, record.getFormNumber());</span>
+<span class="fc" id="L54">        formRecordRepository.save(record);</span>
+<span class="fc" id="L55">        log.debug(&quot;Saved offer record with form_number={}&quot;, record.getFormNumber());</span>
 
-<span class="fc" id="L56">        return new OfferResponse(MONTHLY_PREMIUM.doubleValue(), ANNUAL_PREMIUM.doubleValue(), CURRENCY, coverageDetails);</span>
+<span class="fc" id="L57">        return new OfferResponse(premium.monthlyPremium(), premium.annualPremium(), CURRENCY, coverageDetails);</span>
     }
 
     private FormRecord toFormRecord(FormData formData) {
-<span class="fc" id="L60">        FormRecord record = new FormRecord();</span>
-<span class="fc" id="L61">        record.setProfile(formData.getProfile());</span>
-<span class="fc" id="L62">        record.setCoverPartner(formData.isCoverPartner());</span>
-<span class="fc" id="L63">        record.setCoverChildren(formData.isCoverChildren());</span>
-<span class="fc" id="L64">        record.setNumberOfChildren(formData.getNumberOfChildren());</span>
-<span class="fc" id="L65">        record.setAge(formData.getAge());</span>
-<span class="fc" id="L66">        record.setPostcode(formData.getPostcode());</span>
-<span class="fc" id="L67">        record.setOpticalNeeds(formData.getOpticalNeeds());</span>
-<span class="fc" id="L68">        record.setDentalNeeds(formData.getDentalNeeds());</span>
-<span class="fc" id="L69">        record.setAlternativeMedicine(formData.getAlternativeMedicine());</span>
-<span class="fc" id="L70">        record.setHospitalisationPreference(formData.getHospitalisationPreference());</span>
-<span class="fc" id="L71">        record.setDoctorChoice(formData.getDoctorChoice());</span>
-<span class="fc" id="L72">        record.setPhoneNumber(formData.getPhoneNumber());</span>
-<span class="fc" id="L73">        return record;</span>
+<span class="fc" id="L61">        FormRecord record = new FormRecord();</span>
+<span class="fc" id="L62">        record.setProfile(formData.getProfile());</span>
+<span class="fc" id="L63">        record.setCoverPartner(formData.isCoverPartner());</span>
+<span class="fc" id="L64">        record.setCoverChildren(formData.isCoverChildren());</span>
+<span class="fc" id="L65">        record.setNumberOfChildren(formData.getNumberOfChildren());</span>
+<span class="fc" id="L66">        record.setAge(formData.getAge());</span>
+<span class="fc" id="L67">        record.setPostcode(formData.getPostcode());</span>
+<span class="fc" id="L68">        record.setOpticalNeeds(formData.getOpticalNeeds());</span>
+<span class="fc" id="L69">        record.setDentalNeeds(formData.getDentalNeeds());</span>
+<span class="fc" id="L70">        record.setAlternativeMedicine(formData.getAlternativeMedicine());</span>
+<span class="fc" id="L71">        record.setHospitalisationPreference(formData.getHospitalisationPreference());</span>
+<span class="fc" id="L72">        record.setDoctorChoice(formData.getDoctorChoice());</span>
+<span class="fc" id="L73">        record.setPhoneNumber(formData.getPhoneNumber());</span>
+<span class="fc" id="L74">        return record;</span>
     }
 
     private List&lt;String&gt; buildCoverageDetails(FormData formData) {
-<span class="fc" id="L77">        List&lt;String&gt; details = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L78">        List&lt;String&gt; details = new ArrayList&lt;&gt;();</span>
 
-<span class="fc bfc" id="L79" title="All 2 branches covered.">        if (formData.getOpticalNeeds() != null) {</span>
-<span class="fc" id="L80">            details.add(&quot;Optical: &quot; + describeOptical(formData.getOpticalNeeds()));</span>
+<span class="fc bfc" id="L80" title="All 2 branches covered.">        if (formData.getOpticalNeeds() != null) {</span>
+<span class="fc" id="L81">            details.add(&quot;Optical: &quot; + describeOptical(formData.getOpticalNeeds()));</span>
         }
-<span class="fc bfc" id="L82" title="All 2 branches covered.">        if (formData.getDentalNeeds() != null) {</span>
-<span class="fc" id="L83">            details.add(&quot;Dental: &quot; + describeDental(formData.getDentalNeeds()));</span>
+<span class="fc bfc" id="L83" title="All 2 branches covered.">        if (formData.getDentalNeeds() != null) {</span>
+<span class="fc" id="L84">            details.add(&quot;Dental: &quot; + describeDental(formData.getDentalNeeds()));</span>
         }
-<span class="fc bfc" id="L85" title="All 2 branches covered.">        if (formData.getAlternativeMedicine() != null) {</span>
-<span class="fc" id="L86">            details.add(&quot;Alternative medicine: &quot; + describeAlternativeMedicine(formData.getAlternativeMedicine()));</span>
+<span class="fc bfc" id="L86" title="All 2 branches covered.">        if (formData.getAlternativeMedicine() != null) {</span>
+<span class="fc" id="L87">            details.add(&quot;Alternative medicine: &quot; + describeAlternativeMedicine(formData.getAlternativeMedicine()));</span>
         }
-<span class="fc bfc" id="L88" title="All 2 branches covered.">        if (formData.getHospitalisationPreference() != null) {</span>
-<span class="fc" id="L89">            details.add(&quot;Hospitalisation: &quot; + describeHospitalisation(formData.getHospitalisationPreference()));</span>
+<span class="fc bfc" id="L89" title="All 2 branches covered.">        if (formData.getHospitalisationPreference() != null) {</span>
+<span class="fc" id="L90">            details.add(&quot;Hospitalisation: &quot; + describeHospitalisation(formData.getHospitalisationPreference()));</span>
         }
-<span class="fc bfc" id="L91" title="All 2 branches covered.">        if (formData.getDoctorChoice() != null) {</span>
-<span class="fc" id="L92">            details.add(&quot;Doctor access: &quot; + describeDoctorChoice(formData.getDoctorChoice()));</span>
+<span class="fc bfc" id="L92" title="All 2 branches covered.">        if (formData.getDoctorChoice() != null) {</span>
+<span class="fc" id="L93">            details.add(&quot;Doctor access: &quot; + describeDoctorChoice(formData.getDoctorChoice()));</span>
         }
 
-<span class="fc" id="L95">        return details;</span>
+<span class="fc" id="L96">        return details;</span>
     }
 
     private String describeOptical(String opticalNeeds) {
-<span class="pc bpc" id="L99" title="1 of 5 branches missed.">        return switch (opticalNeeds) {</span>
-<span class="fc" id="L100">            case &quot;nothing&quot;     -&gt; &quot;No optical coverage&quot;;</span>
-<span class="fc" id="L101">            case &quot;standard&quot;    -&gt; &quot;Standard glasses or contact lenses&quot;;</span>
-<span class="fc" id="L102">            case &quot;progressive&quot; -&gt; &quot;Progressive lenses&quot;;</span>
-<span class="fc" id="L103">            case &quot;surgery&quot;     -&gt; &quot;Eye surgery coverage&quot;;</span>
-<span class="nc" id="L104">            default            -&gt; opticalNeeds;</span>
+<span class="pc bpc" id="L100" title="1 of 5 branches missed.">        return switch (opticalNeeds) {</span>
+<span class="fc" id="L101">            case &quot;nothing&quot;     -&gt; &quot;No optical coverage&quot;;</span>
+<span class="fc" id="L102">            case &quot;standard&quot;    -&gt; &quot;Standard glasses or contact lenses&quot;;</span>
+<span class="fc" id="L103">            case &quot;progressive&quot; -&gt; &quot;Progressive lenses&quot;;</span>
+<span class="fc" id="L104">            case &quot;surgery&quot;     -&gt; &quot;Eye surgery coverage&quot;;</span>
+<span class="nc" id="L105">            default            -&gt; opticalNeeds;</span>
         };
     }
 
     private String describeDental(String dentalNeeds) {
-<span class="pc bpc" id="L109" title="1 of 5 branches missed.">        return switch (dentalNeeds) {</span>
-<span class="fc" id="L110">            case &quot;none&quot;        -&gt; &quot;No dental coverage&quot;;</span>
-<span class="fc" id="L111">            case &quot;maintenance&quot; -&gt; &quot;Just maintenance&quot;;</span>
-<span class="fc" id="L112">            case &quot;standard&quot;    -&gt; &quot;Standard dental care&quot;;</span>
-<span class="fc" id="L113">            case &quot;major&quot;       -&gt; &quot;Major dental works&quot;;</span>
-<span class="nc" id="L114">            default            -&gt; dentalNeeds;</span>
+<span class="pc bpc" id="L110" title="1 of 5 branches missed.">        return switch (dentalNeeds) {</span>
+<span class="fc" id="L111">            case &quot;none&quot;        -&gt; &quot;No dental coverage&quot;;</span>
+<span class="fc" id="L112">            case &quot;maintenance&quot; -&gt; &quot;Just maintenance&quot;;</span>
+<span class="fc" id="L113">            case &quot;standard&quot;    -&gt; &quot;Standard dental care&quot;;</span>
+<span class="fc" id="L114">            case &quot;major&quot;       -&gt; &quot;Major dental works&quot;;</span>
+<span class="nc" id="L115">            default            -&gt; dentalNeeds;</span>
         };
     }
 
     private String describeAlternativeMedicine(String alternativeMedicine) {
-<span class="pc bpc" id="L119" title="1 of 4 branches missed.">        return switch (alternativeMedicine) {</span>
-<span class="fc" id="L120">            case &quot;never&quot;           -&gt; &quot;Not included&quot;;</span>
-<span class="fc" id="L121">            case &quot;one_two&quot;         -&gt; &quot;1–2 sessions/year&quot;;</span>
-<span class="fc" id="L122">            case &quot;more_than_three&quot; -&gt; &quot;3+ sessions/year&quot;;</span>
-<span class="nc" id="L123">            default                -&gt; alternativeMedicine;</span>
+<span class="pc bpc" id="L120" title="1 of 4 branches missed.">        return switch (alternativeMedicine) {</span>
+<span class="fc" id="L121">            case &quot;never&quot;           -&gt; &quot;Not included&quot;;</span>
+<span class="fc" id="L122">            case &quot;one_two&quot;         -&gt; &quot;1–2 sessions/year&quot;;</span>
+<span class="fc" id="L123">            case &quot;more_than_three&quot; -&gt; &quot;3+ sessions/year&quot;;</span>
+<span class="nc" id="L124">            default                -&gt; alternativeMedicine;</span>
         };
     }
 
     private String describeHospitalisation(String hospitalisationPreference) {
-<span class="pc bpc" id="L128" title="1 of 4 branches missed.">        return switch (hospitalisationPreference) {</span>
-<span class="fc" id="L129">            case &quot;shared&quot;             -&gt; &quot;Shared room&quot;;</span>
-<span class="fc" id="L130">            case &quot;private_preferred&quot;  -&gt; &quot;Private room preferred&quot;;</span>
-<span class="fc" id="L131">            case &quot;private_essential&quot;  -&gt; &quot;Private room essential&quot;;</span>
-<span class="nc" id="L132">            default                   -&gt; hospitalisationPreference;</span>
+<span class="pc bpc" id="L129" title="1 of 4 branches missed.">        return switch (hospitalisationPreference) {</span>
+<span class="fc" id="L130">            case &quot;shared&quot;            -&gt; &quot;Shared room&quot;;</span>
+<span class="fc" id="L131">            case &quot;private_preferred&quot; -&gt; &quot;Private room preferred&quot;;</span>
+<span class="fc" id="L132">            case &quot;private_essential&quot; -&gt; &quot;Private room essential&quot;;</span>
+<span class="nc" id="L133">            default                  -&gt; hospitalisationPreference;</span>
         };
     }
 
     private String describeDoctorChoice(String doctorChoice) {
-<span class="pc bpc" id="L137" title="1 of 4 branches missed.">        return switch (doctorChoice) {</span>
-<span class="fc" id="L138">            case &quot;gp_specialist&quot;       -&gt; &quot;GP + Specialist referral&quot;;</span>
-<span class="fc" id="L139">            case &quot;specialist_standard&quot; -&gt; &quot;Direct specialist access (standard)&quot;;</span>
-<span class="fc" id="L140">            case &quot;specialist_private&quot;  -&gt; &quot;Direct specialist access (private)&quot;;</span>
-<span class="nc" id="L141">            default                    -&gt; doctorChoice;</span>
+<span class="pc bpc" id="L138" title="1 of 4 branches missed.">        return switch (doctorChoice) {</span>
+<span class="fc" id="L139">            case &quot;gp_specialist&quot;       -&gt; &quot;GP + Specialist referral&quot;;</span>
+<span class="fc" id="L140">            case &quot;specialist_standard&quot; -&gt; &quot;Direct specialist access (standard)&quot;;</span>
+<span class="fc" id="L141">            case &quot;specialist_private&quot;  -&gt; &quot;Direct specialist access (private)&quot;;</span>
+<span class="nc" id="L142">            default                    -&gt; doctorChoice;</span>
         };
     }
 }

@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>AiModelService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">arete-web-api</a> &gt; <a href="index.source.html" class="el_package">com.arete.webapi.service</a> &gt; <span class="el_source">AiModelService.java</span></div><h1>AiModelService.java</h1><pre class="source lang-java linenums">package com.arete.webapi.service;
+
+import com.azure.ai.inference.ChatCompletionsClient;
+import com.azure.ai.inference.ChatCompletionsClientBuilder;
+import com.azure.ai.inference.models.ChatCompletions;
+import com.azure.ai.inference.models.ChatCompletionsOptions;
+import com.azure.ai.inference.models.ChatRequestSystemMessage;
+import com.azure.ai.inference.models.ChatRequestUserMessage;
+import com.azure.core.credential.AzureKeyCredential;
+import com.arete.webapi.dto.FormData;
+import com.arete.webapi.dto.ai.PremiumResult;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.annotation.PostConstruct;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class AiModelService {
+
+<span class="fc" id="L25">    private static final Logger log = LoggerFactory.getLogger(AiModelService.class);</span>
+
+    @Value(&quot;${model.api.url:}&quot;)
+    private String modelApiUrl;
+
+    @Value(&quot;${model.api.key:}&quot;)
+    private String modelApiKey;
+
+    @Value(&quot;${model.system.prompt}&quot;)
+    private String systemPrompt;
+
+    @Value(&quot;${model.user.prompt.template}&quot;)
+    private String userPromptTemplate;
+
+    private ChatCompletionsClient chatClient;
+    private final ObjectMapper objectMapper;
+
+<span class="fc" id="L42">    public AiModelService(ObjectMapper objectMapper) {</span>
+<span class="fc" id="L43">        this.objectMapper = objectMapper;</span>
+<span class="fc" id="L44">    }</span>
+
+    @PostConstruct
+    void initClient() {
+<span class="pc bpc" id="L48" title="2 of 4 branches missed.">        if (modelApiUrl != null &amp;&amp; !modelApiUrl.isBlank()) {</span>
+<span class="nc" id="L49">            chatClient = new ChatCompletionsClientBuilder()</span>
+<span class="nc" id="L50">                    .credential(new AzureKeyCredential(modelApiKey))</span>
+<span class="nc" id="L51">                    .endpoint(modelApiUrl)</span>
+<span class="nc" id="L52">                    .buildClient();</span>
+<span class="nc" id="L53">            log.info(&quot;Azure AI Inference client initialised for endpoint: {}&quot;, modelApiUrl);</span>
+        } else {
+<span class="fc" id="L55">            log.warn(&quot;MODEL_API_URL not configured — AI model calls will fail at runtime&quot;);</span>
+        }
+<span class="fc" id="L57">    }</span>
+
+    public PremiumResult fetchPremium(FormData formData) {
+<span class="fc bfc" id="L60" title="All 2 branches covered.">        if (chatClient == null) {</span>
+<span class="fc" id="L61">            throw new IllegalStateException(&quot;MODEL_API_URL is not configured&quot;);</span>
+        }
+
+<span class="fc" id="L64">        String userPrompt = buildUserPrompt(formData);</span>
+<span class="fc" id="L65">        log.info(&quot;Calling Azure AI Inference model for premium calculation&quot;);</span>
+<span class="fc" id="L66">        log.debug(&quot;User prompt: {}&quot;, userPrompt);</span>
+
+<span class="fc" id="L68">        ChatCompletionsOptions options = new ChatCompletionsOptions(List.of(</span>
+                new ChatRequestSystemMessage(systemPrompt),
+                new ChatRequestUserMessage(userPrompt)
+        ));
+
+<span class="fc" id="L73">        ChatCompletions completions = chatClient.complete(options);</span>
+
+<span class="pc bpc" id="L75" title="2 of 6 branches missed.">        if (completions == null || completions.getChoices() == null || completions.getChoices().isEmpty()) {</span>
+<span class="fc" id="L76">            throw new IllegalStateException(&quot;Empty response from AI model&quot;);</span>
+        }
+
+<span class="fc" id="L79">        String content = completions.getChoices().get(0).getMessage().getContent();</span>
+<span class="fc" id="L80">        log.debug(&quot;AI model raw response: {}&quot;, content);</span>
+
+<span class="fc" id="L82">        return parseModelResponse(content);</span>
+    }
+
+    String buildUserPrompt(FormData formData) {
+<span class="fc" id="L86">        return userPromptTemplate</span>
+<span class="fc" id="L87">                .replace(&quot;{profile}&quot;, nullSafe(formData.getProfile()))</span>
+<span class="fc" id="L88">                .replace(&quot;{age}&quot;, nullSafe(formData.getAge()))</span>
+<span class="fc" id="L89">                .replace(&quot;{postcode}&quot;, nullSafe(formData.getPostcode()))</span>
+<span class="fc" id="L90">                .replace(&quot;{coverPartner}&quot;, String.valueOf(formData.isCoverPartner()))</span>
+<span class="fc" id="L91">                .replace(&quot;{coverChildren}&quot;, String.valueOf(formData.isCoverChildren()))</span>
+<span class="fc" id="L92">                .replace(&quot;{numberOfChildren}&quot;, String.valueOf(formData.getNumberOfChildren()))</span>
+<span class="fc" id="L93">                .replace(&quot;{opticalNeeds}&quot;, nullSafe(formData.getOpticalNeeds()))</span>
+<span class="fc" id="L94">                .replace(&quot;{dentalNeeds}&quot;, nullSafe(formData.getDentalNeeds()))</span>
+<span class="fc" id="L95">                .replace(&quot;{alternativeMedicine}&quot;, nullSafe(formData.getAlternativeMedicine()))</span>
+<span class="fc" id="L96">                .replace(&quot;{hospitalisationPreference}&quot;, nullSafe(formData.getHospitalisationPreference()))</span>
+<span class="fc" id="L97">                .replace(&quot;{doctorChoice}&quot;, nullSafe(formData.getDoctorChoice()));</span>
+    }
+
+    PremiumResult parseModelResponse(String content) {
+        try {
+<span class="fc" id="L102">            String cleaned = content.replaceAll(&quot;```(?:json)?\\s*&quot;, &quot;&quot;).trim();</span>
+<span class="fc" id="L103">            int start = cleaned.indexOf('{');</span>
+<span class="fc" id="L104">            int end = cleaned.lastIndexOf('}');</span>
+<span class="pc bpc" id="L105" title="1 of 4 branches missed.">            if (start &gt;= 0 &amp;&amp; end &gt; start) {</span>
+<span class="fc" id="L106">                cleaned = cleaned.substring(start, end + 1);</span>
+            }
+<span class="fc" id="L108">            JsonNode node = objectMapper.readTree(cleaned);</span>
+<span class="fc" id="L109">            double monthly = node.get(&quot;monthlyPremium&quot;).asDouble();</span>
+<span class="fc" id="L110">            double annual = node.get(&quot;annualPremium&quot;).asDouble();</span>
+<span class="fc" id="L111">            log.info(&quot;AI model returned premium: monthly={} annual={}&quot;, monthly, annual);</span>
+<span class="fc" id="L112">            return new PremiumResult(monthly, annual);</span>
+<span class="fc" id="L113">        } catch (Exception e) {</span>
+<span class="fc" id="L114">            log.error(&quot;Failed to parse AI model response: {}&quot;, content, e);</span>
+<span class="fc" id="L115">            throw new IllegalStateException(&quot;Failed to parse premium from AI model response&quot;, e);</span>
+        }
+    }
+
+    private String nullSafe(String value) {
+<span class="fc bfc" id="L120" title="All 2 branches covered.">        return value != null ? value : &quot;&quot;;</span>
+    }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

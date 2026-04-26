@@ -2,6 +2,7 @@ package com.arete.webapi.service;
 
 import com.arete.webapi.dto.FormData;
 import com.arete.webapi.dto.OfferResponse;
+import com.arete.webapi.dto.ai.PremiumResult;
 import com.arete.webapi.model.FormRecord;
 import com.arete.webapi.repository.FormRecordRepository;
 import org.slf4j.Logger;
@@ -17,15 +18,14 @@ import java.util.UUID;
 public class FormService {
 
     private static final Logger log = LoggerFactory.getLogger(FormService.class);
-
-    private static final BigDecimal MONTHLY_PREMIUM = BigDecimal.valueOf(100.00);
-    private static final BigDecimal ANNUAL_PREMIUM = BigDecimal.valueOf(1000.00);
     private static final String CURRENCY = "EUR";
 
     private final FormRecordRepository formRecordRepository;
+    private final AiModelService aiModelService;
 
-    public FormService(FormRecordRepository formRecordRepository) {
+    public FormService(FormRecordRepository formRecordRepository, AiModelService aiModelService) {
         this.formRecordRepository = formRecordRepository;
+        this.aiModelService = aiModelService;
     }
 
     public void saveLeaveEmail(String email, FormData formData) {
@@ -42,18 +42,19 @@ public class FormService {
     public OfferResponse calculateOffer(FormData formData) {
         log.info("Calculating offer for profile={}, age={}", formData.getProfile(), formData.getAge());
 
+        PremiumResult premium = aiModelService.fetchPremium(formData);
         List<String> coverageDetails = buildCoverageDetails(formData);
 
         FormRecord record = toFormRecord(formData);
         record.setFormNumber(UUID.randomUUID().toString());
         record.setEmailAddress(formData.getEmail());
-        record.setMonthlyPremium(MONTHLY_PREMIUM);
-        record.setAnnualPremium(ANNUAL_PREMIUM);
+        record.setMonthlyPremium(BigDecimal.valueOf(premium.monthlyPremium()));
+        record.setAnnualPremium(BigDecimal.valueOf(premium.annualPremium()));
 
         formRecordRepository.save(record);
         log.debug("Saved offer record with form_number={}", record.getFormNumber());
 
-        return new OfferResponse(MONTHLY_PREMIUM.doubleValue(), ANNUAL_PREMIUM.doubleValue(), CURRENCY, coverageDetails);
+        return new OfferResponse(premium.monthlyPremium(), premium.annualPremium(), CURRENCY, coverageDetails);
     }
 
     private FormRecord toFormRecord(FormData formData) {
@@ -126,10 +127,10 @@ public class FormService {
 
     private String describeHospitalisation(String hospitalisationPreference) {
         return switch (hospitalisationPreference) {
-            case "shared"             -> "Shared room";
-            case "private_preferred"  -> "Private room preferred";
-            case "private_essential"  -> "Private room essential";
-            default                   -> hospitalisationPreference;
+            case "shared"            -> "Shared room";
+            case "private_preferred" -> "Private room preferred";
+            case "private_essential" -> "Private room essential";
+            default                  -> hospitalisationPreference;
         };
     }
 

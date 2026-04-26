@@ -2,6 +2,7 @@ package com.arete.webapi.service;
 
 import com.arete.webapi.dto.FormData;
 import com.arete.webapi.dto.OfferResponse;
+import com.arete.webapi.dto.ai.PremiumResult;
 import com.arete.webapi.model.FormRecord;
 import com.arete.webapi.repository.FormRecordRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +24,9 @@ class FormServiceTest {
 
     @Mock
     private FormRecordRepository formRecordRepository;
+
+    @Mock
+    private AiModelService aiModelService;
 
     @InjectMocks
     private FormService formService;
@@ -66,7 +70,8 @@ class FormServiceTest {
     }
 
     @Test
-    void calculateOffer_returnsFixedPremiums() {
+    void calculateOffer_returnsPremiumFromAiModel() {
+        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(100.0, 1000.0));
         when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
 
         OfferResponse response = formService.calculateOffer(formData);
@@ -78,6 +83,7 @@ class FormServiceTest {
 
     @Test
     void calculateOffer_savesPremiumsToDatabase() {
+        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(100.0, 1000.0));
         when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
 
         formService.calculateOffer(formData);
@@ -92,6 +98,7 @@ class FormServiceTest {
 
     @Test
     void calculateOffer_buildsCoverageDetails_forAllFields() {
+        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(100.0, 1000.0));
         when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
 
         OfferResponse response = formService.calculateOffer(formData);
@@ -105,12 +112,13 @@ class FormServiceTest {
     }
 
     @Test
-    void calculateOffer_buildsCoverageDetails_forOpticalNothing() {
+    void calculateOffer_buildsCoverageDetails_forOptionalVariants() {
         formData.setOpticalNeeds("nothing");
         formData.setDentalNeeds("none");
         formData.setAlternativeMedicine("never");
         formData.setHospitalisationPreference("shared");
         formData.setDoctorChoice("specialist_private");
+        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(80.0, 960.0));
         when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
 
         OfferResponse response = formService.calculateOffer(formData);
@@ -123,12 +131,13 @@ class FormServiceTest {
     }
 
     @Test
-    void calculateOffer_buildsCoverageDetails_forProgressiveOptical() {
+    void calculateOffer_buildsCoverageDetails_forProgressiveAndMajorVariants() {
         formData.setOpticalNeeds("progressive");
         formData.setDentalNeeds("standard");
         formData.setAlternativeMedicine("more_than_three");
         formData.setHospitalisationPreference("private_essential");
         formData.setDoctorChoice("specialist_standard");
+        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(130.0, 1560.0));
         when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
 
         OfferResponse response = formService.calculateOffer(formData);
@@ -141,9 +150,10 @@ class FormServiceTest {
     }
 
     @Test
-    void calculateOffer_buildsCoverageDetails_forSurgeryOptical() {
+    void calculateOffer_buildsCoverageDetails_forSurgeryAndMajorDental() {
         formData.setOpticalNeeds("surgery");
         formData.setDentalNeeds("major");
+        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(150.0, 1800.0));
         when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
 
         OfferResponse response = formService.calculateOffer(formData);
@@ -159,6 +169,7 @@ class FormServiceTest {
         formData.setAlternativeMedicine(null);
         formData.setHospitalisationPreference(null);
         formData.setDoctorChoice(null);
+        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(70.0, 840.0));
         when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
 
         OfferResponse response = formService.calculateOffer(formData);

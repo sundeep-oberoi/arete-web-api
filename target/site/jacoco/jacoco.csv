@@ -1,6 +1,7 @@
 GROUP,PACKAGE,CLASS,INSTRUCTION_MISSED,INSTRUCTION_COVERED,BRANCH_MISSED,BRANCH_COVERED,LINE_MISSED,LINE_COVERED,COMPLEXITY_MISSED,COMPLEXITY_COVERED,METHOD_MISSED,METHOD_COVERED
+arete-web-api,com.arete.webapi.service,AiModelService,21,227,5,13,5,45,5,11,0,7
 arete-web-api,com.arete.webapi.service,RoomCostService,0,86,0,4,0,18,0,5,0,3
-arete-web-api,com.arete.webapi.service,FormService,5,285,5,27,5,71,5,28,0,11
+arete-web-api,com.arete.webapi.service,FormService,5,291,5,27,5,71,5,28,0,11
 arete-web-api,com.arete.webapi.controller,FormController,0,71,1,5,0,18,1,7,0,5
 arete-web-api,com.arete.webapi.model,FormRecord,48,85,0,0,16,24,15,23,15,23
 arete-web-api,com.arete.webapi.model,RoomCostConfig,3,28,0,0,1,9,1,8,1,8
@@ -14,3 +15,4 @@ arete-web-api,com.arete.webapi.dto,OfferResponse,0,27,0,0,0,10,0,5,0,5
 arete-web-api,com.arete.webapi.dto,RoomCostResponse,0,15,0,0,0,6,0,3,0,3
 arete-web-api,com.arete.webapi.dto,FormData,0,94,0,0,0,28,0,27,0,27
 arete-web-api,com.arete.webapi.dto,SaveLeaveEmailRequest,0,17,0,0,0,5,0,5,0,5
+arete-web-api,com.arete.webapi.dto.ai,PremiumResult,0,9,0,0,0,1,0,1,0,1
