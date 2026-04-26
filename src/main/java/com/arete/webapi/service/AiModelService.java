@@ -62,7 +62,7 @@ public class AiModelService {
 
         String userPrompt = buildUserPrompt(formData);
         log.info("Calling Azure AI Foundry model for premium calculation");
-        log.debug("User prompt: {}", userPrompt);
+        log.info("User prompt: {}", userPrompt);
 
         ChatCompletionCreateParams params = ChatCompletionCreateParams.builder()
                 .model(modelName != null ? modelName : "")
@@ -78,7 +78,7 @@ public class AiModelService {
 
         String content = completion.choices().get(0).message().content()
                 .orElseThrow(() -> new IllegalStateException("Empty response from AI model"));
-        log.debug("AI model raw response: {}", content);
+        log.info("AI model raw response: {}", content);
 
         return parseModelResponse(content);
     }
