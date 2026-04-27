@@ -174,11 +174,11 @@ class FormControllerTest {
     }
 
     @Test
-    void getOffer_returns500_whenOfferNotReady() throws Exception {
+    void getOffer_returns202_whenOfferNotReady() throws Exception {
         when(formService.getOffer(eq("not-ready"))).thenThrow(new OfferNotReadyException("not-ready"));
 
         mockMvc.perform(get("/offer/not-ready"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.error").exists());
+                .andExpect(status().isAccepted())
+                .andExpect(jsonPath("$.status").value("pending"));
     }
 }

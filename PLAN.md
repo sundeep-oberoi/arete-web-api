@@ -22,7 +22,7 @@ Base path: `/api/msf` (server.servlet.context-path)
 ## Async Offer Flow
 1. `POST /save-form` saves form data to DB (premium fields null), triggers `OfferWorkerService.computeOffer()` on a Spring async thread, returns the UUID immediately.
 2. Worker thread calls Azure AI Foundry model, saves `monthly_premium`, `annual_premium`, `currency`, `coverage_details` back to the same DB row.
-3. `GET /offer/{uuid}` reads the row; if premium is null it waits 10 s (`offer.wait.ms`), reads again, and returns 500 if still null — allowing the React UI to retry up to 5 times.
+3. `GET /offer/{uuid}` reads the row; if premium is null it waits 60 s (`offer.wait.ms`), reads again, and returns 202 if still null — allowing the React UI to retry up to 5 times.
 
 ## Database Schema
 
@@ -115,7 +115,7 @@ com.arete.webapi
 - **save-leave-email**: generates UUID form_number, saves form data + email; returns 204
 - **save-form**: generates UUID, saves form (premiums null), triggers async worker; returns `{uuid}`
 - **offer worker**: calls Azure Foundry `Phi-4-reasoning-1`, builds coverage detail strings, saves premium + currency + coverage back to DB row
-- **offer/{uuid}**: reads row; if premium null waits 10 s; if still null returns 500 for client retry; if ready returns full offer
+- **offer/{uuid}**: reads row; if premium null waits 60 s; if still null returns 202 for client retry; if ready returns full offer
 
 ## Testing Strategy
 - `FormControllerTest` – MockMvc tests for all 4 endpoints (happy path + error cases)

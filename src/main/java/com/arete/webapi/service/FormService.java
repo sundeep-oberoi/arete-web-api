@@ -21,7 +21,7 @@ public class FormService {
 
     private static final Logger log = LoggerFactory.getLogger(FormService.class);
 
-    @Value("${offer.wait.ms:10000}")
+    @Value("${offer.wait.ms:60000}")
     private long offerWaitMs;
 
     private final FormRecordRepository formRecordRepository;

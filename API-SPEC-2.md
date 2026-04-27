@@ -201,6 +201,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OfferResult'
+        '202':
+          description: Offer calculation in progress
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                  type: string
+                  example: pending
         '404':
           description: No form submission found for the given UUID.
         '500':

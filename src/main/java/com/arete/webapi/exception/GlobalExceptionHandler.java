@@ -23,9 +23,9 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(OfferNotReadyException.class)
     public ResponseEntity<Map<String, String>> handleOfferNotReady(OfferNotReadyException ex) {
-        log.warn("Offer not ready: {}", ex.getMessage());
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", ex.getMessage()));
+        log.info("Offer not ready, returning 202: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.ACCEPTED)
+                .body(Map.of("status", "pending"));
     }
 
     @ExceptionHandler(RoomCostExpiredException.class)

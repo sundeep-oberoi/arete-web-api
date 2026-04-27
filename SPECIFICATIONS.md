@@ -13,7 +13,7 @@
 - The /save-form API saves form data to the database
 - Use same database table as /save-leave-email API
 - Starts a worker thread
-- Returns a a unique form number
+- Returns a unique form number
 
 ## Worker thread in Save Form API
 - The worker thread fetch the offer price from an Azure Foundry model 
@@ -27,7 +27,7 @@
 
 ## Offer/{UUID} API
 - The /offer/{UUID} API fetches the offer from same database table as /save-form API
-- Checks if the offer price is avaialable in the database table 
-- If price is not availabe, waits 10s
-- Checks again if the offer price is avaialable in the database table
-- If price is not availabe, returns an error allowing the React UI to invoke this API again
+- Checks if the offer price is available in the database table 
+- If price is not availabe, waits 60s
+- Checks again if the offer price is available in the database table
+- If price is not availabe, returns a 202 allowing the React UI to invoke this API again
