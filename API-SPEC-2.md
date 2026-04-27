@@ -5,7 +5,7 @@ info:
   description: Backend APIs for the Arète health insurance multistep web form.
 
 servers:
-  - url: /api
+  - url: /api/msf
     description: Relative base path (configure via VITE_API_BASE_URL)
 
 components:
