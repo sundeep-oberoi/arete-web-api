@@ -3,6 +3,7 @@ package com.arete.webapi.controller;
 import com.arete.webapi.dto.FormData;
 import com.arete.webapi.dto.OfferResponse;
 import com.arete.webapi.dto.RoomCostResponse;
+import com.arete.webapi.dto.SaveFormResponse;
 import com.arete.webapi.dto.SaveLeaveEmailRequest;
 import com.arete.webapi.service.FormService;
 import com.arete.webapi.service.RoomCostService;
@@ -28,29 +29,33 @@ public class FormController {
     @PostMapping("/room-cost")
     public ResponseEntity<RoomCostResponse> getRoomCost(@RequestBody FormData formData) {
         log.info("POST /room-cost received");
-        RoomCostResponse response = roomCostService.getRoomCost();
-        return ResponseEntity.ok(response);
+        return ResponseEntity.ok(roomCostService.getRoomCost());
     }
 
     @PostMapping("/save-leave-email")
     public ResponseEntity<Void> saveLeaveEmail(@RequestBody SaveLeaveEmailRequest request) {
         log.info("POST /save-leave-email received for email: {}", request.getEmail());
-
         if (request.getEmail() == null || request.getEmail().isBlank()) {
             throw new IllegalArgumentException("Email is required");
         }
         if (request.getFormData() == null) {
             throw new IllegalArgumentException("Form data is required");
         }
-
         formService.saveLeaveEmail(request.getEmail(), request.getFormData());
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/offer")
-    public ResponseEntity<OfferResponse> getOffer(@RequestBody FormData formData) {
-        log.info("POST /offer received for profile: {}", formData.getProfile());
-        OfferResponse response = formService.calculateOffer(formData);
+    @PostMapping("/save-form")
+    public ResponseEntity<SaveFormResponse> saveForm(@RequestBody FormData formData) {
+        log.info("POST /save-form received for profile: {}", formData.getProfile());
+        String uuid = formService.saveForm(formData);
+        return ResponseEntity.ok(new SaveFormResponse(uuid));
+    }
+
+    @GetMapping("/offer/{uuid}")
+    public ResponseEntity<OfferResponse> getOffer(@PathVariable String uuid) {
+        log.info("GET /offer/{} received", uuid);
+        OfferResponse response = formService.getOffer(uuid);
         return ResponseEntity.ok(response);
     }
 }

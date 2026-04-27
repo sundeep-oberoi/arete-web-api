@@ -60,6 +60,12 @@ public class FormRecord {
     @Column(name = "annual_premium")
     private BigDecimal annualPremium;
 
+    @Column(name = "currency")
+    private String currency;
+
+    @Column(name = "coverage_details", columnDefinition = "CLOB")
+    private String coverageDetails;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
@@ -120,6 +126,12 @@ public class FormRecord {
 
     public BigDecimal getAnnualPremium() { return annualPremium; }
     public void setAnnualPremium(BigDecimal annualPremium) { this.annualPremium = annualPremium; }
+
+    public String getCurrency() { return currency; }
+    public void setCurrency(String currency) { this.currency = currency; }
+
+    public String getCoverageDetails() { return coverageDetails; }
+    public void setCoverageDetails(String coverageDetails) { this.coverageDetails = coverageDetails; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

@@ -2,9 +2,11 @@ package com.arete.webapi.service;
 
 import com.arete.webapi.dto.FormData;
 import com.arete.webapi.dto.OfferResponse;
-import com.arete.webapi.dto.ai.PremiumResult;
+import com.arete.webapi.exception.OfferNotFoundException;
+import com.arete.webapi.exception.OfferNotReadyException;
 import com.arete.webapi.model.FormRecord;
 import com.arete.webapi.repository.FormRecordRepository;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -12,11 +14,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -26,7 +31,7 @@ class FormServiceTest {
     private FormRecordRepository formRecordRepository;
 
     @Mock
-    private AiModelService aiModelService;
+    private OfferWorkerService offerWorkerService;
 
     @InjectMocks
     private FormService formService;
@@ -35,6 +40,9 @@ class FormServiceTest {
 
     @BeforeEach
     void setUp() {
+        ReflectionTestUtils.setField(formService, "objectMapper", new ObjectMapper());
+        ReflectionTestUtils.setField(formService, "offerWaitMs", 0L);
+
         formData = new FormData();
         formData.setProfile("employee");
         formData.setCoverPartner(true);
@@ -50,6 +58,8 @@ class FormServiceTest {
         formData.setEmail("test@example.com");
         formData.setPhoneNumber("0612345678");
     }
+
+    // ── saveLeaveEmail ────────────────────────────────────────────────────────
 
     @Test
     void saveLeaveEmail_savesRecordWithEmailAndFormNumber() {
@@ -69,111 +79,125 @@ class FormServiceTest {
         assertThat(saved.getAnnualPremium()).isNull();
     }
 
-    @Test
-    void calculateOffer_returnsPremiumFromAiModel() {
-        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(100.0, 1000.0));
-        when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
-
-        OfferResponse response = formService.calculateOffer(formData);
-
-        assertThat(response.getMonthlyPremium()).isEqualTo(100.0);
-        assertThat(response.getAnnualPremium()).isEqualTo(1000.0);
-        assertThat(response.getCurrency()).isEqualTo("EUR");
-    }
+    // ── saveForm ──────────────────────────────────────────────────────────────
 
     @Test
-    void calculateOffer_savesPremiumsToDatabase() {
-        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(100.0, 1000.0));
+    void saveForm_savesRecordAndReturnsUuid() {
         when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        formService.calculateOffer(formData);
+        String uuid = formService.saveForm(formData);
 
+        assertThat(uuid).isNotBlank();
         ArgumentCaptor<FormRecord> captor = ArgumentCaptor.forClass(FormRecord.class);
         verify(formRecordRepository).save(captor.capture());
 
         FormRecord saved = captor.getValue();
-        assertThat(saved.getMonthlyPremium()).isEqualByComparingTo(BigDecimal.valueOf(100.0));
-        assertThat(saved.getAnnualPremium()).isEqualByComparingTo(BigDecimal.valueOf(1000.0));
+        assertThat(saved.getFormNumber()).isEqualTo(uuid);
+        assertThat(saved.getEmailAddress()).isEqualTo("test@example.com");
+        assertThat(saved.getMonthlyPremium()).isNull();
     }
 
     @Test
-    void calculateOffer_buildsCoverageDetails_forAllFields() {
-        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(100.0, 1000.0));
+    void saveForm_triggersAsyncWorker() {
         when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        OfferResponse response = formService.calculateOffer(formData);
+        String uuid = formService.saveForm(formData);
 
-        assertThat(response.getCoverageDetails()).hasSize(5);
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("Standard glasses or contact lenses"));
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("Just maintenance"));
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("1–2 sessions/year"));
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("Private room preferred"));
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("GP + Specialist referral"));
+        verify(offerWorkerService).computeOffer(eq(uuid), eq(formData));
+    }
+
+    // ── getOffer ──────────────────────────────────────────────────────────────
+
+    @Test
+    void getOffer_returnsOffer_whenPremiumIsReady() {
+        when(formRecordRepository.findByFormNumber("test-uuid")).thenReturn(Optional.of(buildRecordWithOffer("test-uuid")));
+
+        OfferResponse response = formService.getOffer("test-uuid");
+
+        assertThat(response.getMonthlyPremium()).isEqualTo(85.0);
+        assertThat(response.getAnnualPremium()).isEqualTo(1020.0);
+        assertThat(response.getCurrency()).isEqualTo("EUR");
+        assertThat(response.getCoverageDetails()).contains("Optical: Standard glasses");
     }
 
     @Test
-    void calculateOffer_buildsCoverageDetails_forOptionalVariants() {
-        formData.setOpticalNeeds("nothing");
-        formData.setDentalNeeds("none");
-        formData.setAlternativeMedicine("never");
-        formData.setHospitalisationPreference("shared");
-        formData.setDoctorChoice("specialist_private");
-        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(80.0, 960.0));
-        when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
+    void getOffer_waitsAndReturnsOffer_whenOfferBecomesReady() {
+        FormRecord noOffer = new FormRecord();
+        noOffer.setFormNumber("wait-uuid");
 
-        OfferResponse response = formService.calculateOffer(formData);
+        when(formRecordRepository.findByFormNumber("wait-uuid"))
+                .thenReturn(Optional.of(noOffer))
+                .thenReturn(Optional.of(buildRecordWithOffer("wait-uuid")));
 
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("No optical coverage"));
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("No dental coverage"));
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("Not included"));
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("Shared room"));
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("Direct specialist access (private)"));
+        OfferResponse response = formService.getOffer("wait-uuid");
+
+        assertThat(response.getMonthlyPremium()).isEqualTo(85.0);
+        verify(formRecordRepository, times(2)).findByFormNumber("wait-uuid");
     }
 
     @Test
-    void calculateOffer_buildsCoverageDetails_forProgressiveAndMajorVariants() {
-        formData.setOpticalNeeds("progressive");
-        formData.setDentalNeeds("standard");
-        formData.setAlternativeMedicine("more_than_three");
-        formData.setHospitalisationPreference("private_essential");
-        formData.setDoctorChoice("specialist_standard");
-        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(130.0, 1560.0));
-        when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
+    void getOffer_throwsNotReady_whenOfferStillNullAfterWait() {
+        FormRecord noOffer = new FormRecord();
+        noOffer.setFormNumber("slow-uuid");
 
-        OfferResponse response = formService.calculateOffer(formData);
+        when(formRecordRepository.findByFormNumber("slow-uuid")).thenReturn(Optional.of(noOffer));
 
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("Progressive lenses"));
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("Standard dental care"));
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("3+ sessions/year"));
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("Private room essential"));
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("Direct specialist access (standard)"));
+        assertThatThrownBy(() -> formService.getOffer("slow-uuid"))
+                .isInstanceOf(OfferNotReadyException.class)
+                .hasMessageContaining("slow-uuid");
     }
 
     @Test
-    void calculateOffer_buildsCoverageDetails_forSurgeryAndMajorDental() {
-        formData.setOpticalNeeds("surgery");
-        formData.setDentalNeeds("major");
-        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(150.0, 1800.0));
-        when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
+    void getOffer_throws404_whenFormNotFound() {
+        when(formRecordRepository.findByFormNumber("bad-uuid")).thenReturn(Optional.empty());
 
-        OfferResponse response = formService.calculateOffer(formData);
-
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("Eye surgery coverage"));
-        assertThat(response.getCoverageDetails()).anyMatch(d -> d.contains("Major dental works"));
+        assertThatThrownBy(() -> formService.getOffer("bad-uuid"))
+                .isInstanceOf(OfferNotFoundException.class)
+                .hasMessageContaining("bad-uuid");
     }
 
     @Test
-    void calculateOffer_handlesNullOptionalFields() {
-        formData.setOpticalNeeds(null);
-        formData.setDentalNeeds(null);
-        formData.setAlternativeMedicine(null);
-        formData.setHospitalisationPreference(null);
-        formData.setDoctorChoice(null);
-        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(70.0, 840.0));
-        when(formRecordRepository.save(any(FormRecord.class))).thenAnswer(inv -> inv.getArgument(0));
+    void getOffer_returnsCurrencyFromRecord() {
+        FormRecord record = buildRecordWithOffer("c-uuid");
+        record.setCurrency("USD");
+        when(formRecordRepository.findByFormNumber("c-uuid")).thenReturn(Optional.of(record));
 
-        OfferResponse response = formService.calculateOffer(formData);
+        OfferResponse response = formService.getOffer("c-uuid");
+
+        assertThat(response.getCurrency()).isEqualTo("USD");
+    }
+
+    @Test
+    void getOffer_returnsEurFallback_whenCurrencyIsNull() {
+        FormRecord record = buildRecordWithOffer("null-cur-uuid");
+        record.setCurrency(null);
+        when(formRecordRepository.findByFormNumber("null-cur-uuid")).thenReturn(Optional.of(record));
+
+        OfferResponse response = formService.getOffer("null-cur-uuid");
+
+        assertThat(response.getCurrency()).isEqualTo("EUR");
+    }
+
+    @Test
+    void getOffer_returnsEmptyCoverage_whenCoverageDetailsIsNull() {
+        FormRecord record = buildRecordWithOffer("no-cov-uuid");
+        record.setCoverageDetails(null);
+        when(formRecordRepository.findByFormNumber("no-cov-uuid")).thenReturn(Optional.of(record));
+
+        OfferResponse response = formService.getOffer("no-cov-uuid");
 
         assertThat(response.getCoverageDetails()).isEmpty();
+    }
+
+    // ── helpers ───────────────────────────────────────────────────────────────
+
+    private FormRecord buildRecordWithOffer(String formNumber) {
+        FormRecord record = new FormRecord();
+        record.setFormNumber(formNumber);
+        record.setMonthlyPremium(BigDecimal.valueOf(85.0));
+        record.setAnnualPremium(BigDecimal.valueOf(1020.0));
+        record.setCurrency("EUR");
+        record.setCoverageDetails("[\"Optical: Standard glasses\", \"Dental: Just maintenance\"]");
+        return record;
     }
 }

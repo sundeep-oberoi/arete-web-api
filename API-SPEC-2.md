@@ -1,12 +1,12 @@
 openapi: 3.1.0
 info:
   title: Arète Multistep Form API
-  version: 1.0.0
+  version: 2.0.0
   description: Backend APIs for the Arète health insurance multistep web form.
 
 servers:
-  - url: /api/msf
-    description: Relative base path
+  - url: /api
+    description: Relative base path (configure via VITE_API_BASE_URL)
 
 components:
   schemas:
@@ -53,6 +53,31 @@ components:
         phoneNumber:
           type: string
           description: French mobile number (10 digits, starts with 06 or 07).
+
+    OfferResult:
+      type: object
+      required: [monthlyPremium, annualPremium, currency, coverageDetails]
+      properties:
+        monthlyPremium:
+          type: number
+          format: float
+          example: 42.50
+        annualPremium:
+          type: number
+          format: float
+          example: 510.00
+        currency:
+          type: string
+          example: EUR
+        coverageDetails:
+          type: array
+          items:
+            type: string
+          description: Human-readable list of included coverage items.
+          example:
+            - "Optical: Standard glasses or contact lenses"
+            - "Dental: Just maintenance"
+            - "Alternative medicine: 1–2 sessions/year"
 
 paths:
   /room-cost:
@@ -119,13 +144,14 @@ paths:
         '500':
           description: Internal server error.
 
-  /offer:
+  /save-form:
     post:
-      summary: Get personalised insurance offer
+      summary: Save completed form and initiate offer calculation
       description: >
-        Calculates and returns a personalised monthly and annual premium based
-        on the subscriber's complete form responses.
-      operationId: getFinalOffer
+        Persists all form responses and triggers the asynchronous offer
+        calculation. Returns a UUID that can be used to poll for the result
+        via GET /offer/{uuid}.
+      operationId: saveForm
       requestBody:
         required: true
         content:
@@ -134,34 +160,48 @@ paths:
               $ref: '#/components/schemas/FormData'
       responses:
         '200':
-          description: Offer calculated successfully.
+          description: Form saved and offer calculation started.
           content:
             application/json:
               schema:
                 type: object
-                required: [monthlyPremium, annualPremium, currency, coverageDetails]
+                required: [uuid]
                 properties:
-                  monthlyPremium:
-                    type: number
-                    format: float
-                    example: 42.50
-                  annualPremium:
-                    type: number
-                    format: float
-                    example: 510.00
-                  currency:
+                  uuid:
                     type: string
-                    example: EUR
-                  coverageDetails:
-                    type: array
-                    items:
-                      type: string
-                    description: Human-readable list of included coverage items.
-                    example:
-                      - "Optical: Standard glasses or contact lenses"
-                      - "Dental: Just maintenance"
-                      - "Alternative medicine: 1–2 sessions/year"
+                    format: uuid
+                    example: "f47ac10b-58cc-4372-a567-0e02b2c3d479"
         '400':
           description: Invalid or incomplete form data.
         '500':
           description: Internal server error.
+
+  /offer/{uuid}:
+    get:
+      summary: Retrieve a calculated insurance offer
+      description: >
+        Returns the personalised monthly and annual premium for the form
+        submission identified by the given UUID. This call may take up to
+        120 seconds while the AI model computes the offer. The frontend
+        retries up to 5 times on timeout before informing the subscriber
+        that they will be contacted.
+      operationId: getOfferByUuid
+      parameters:
+        - name: uuid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID returned by POST /save-form.
+      responses:
+        '200':
+          description: Offer calculated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OfferResult'
+        '404':
+          description: No form submission found for the given UUID.
+        '500':
+          description: Internal server error or model computation failure.

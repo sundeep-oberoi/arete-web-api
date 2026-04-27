@@ -21,9 +21,9 @@ API backend component for the multistep web form.
 - Add an environment property to specify the Azure Foundry model name
 
 # Steps
-- Read the requirements in the file "API-SPEC.md"
+- Read the requirements in the file "API-SPEC-2.md"
 - Read additional requirements in the file "SPECIFICATIONS.md"
-- Write a "PLAN.md"
+- Write a "PLAN.md" or update if needed
 - Write the code
 - Write tests, code coverage must be at least 60%
 - Run tests to check for errors

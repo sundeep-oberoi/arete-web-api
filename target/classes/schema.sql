@@ -23,5 +23,7 @@ CREATE TABLE IF NOT EXISTS form_record (
     phone_number               VARCHAR(20),
     monthly_premium            DECIMAL(10, 2),
     annual_premium             DECIMAL(10, 2),
+    currency                   VARCHAR(3),
+    coverage_details           CLOB,
     created_at                 TIMESTAMP      DEFAULT CURRENT_TIMESTAMP
 );
