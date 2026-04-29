@@ -68,6 +68,8 @@ public class AiModelService {
                 .model(modelName != null ? modelName : "")
                 .addSystemMessage(systemPrompt)
                 .addUserMessage(userPrompt)
+                .temperature(0.8)
+                .maxCompletionTokens(1024)
                 .build();
 
         ChatCompletion completion = openAiClient.chat().completions().create(params);
