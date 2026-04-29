@@ -29,6 +29,12 @@ public class AiModelService {
     @Value("${model.name:}")
     private String modelName;
 
+    @Value("${model.temperature:0.8}")
+    private double modelTemperature;
+
+    @Value("${model.max.tokens:2048}")
+    private int modelMaxTokens;
+
     @Value("${model.system.prompt}")
     private String systemPrompt;
 
@@ -68,8 +74,8 @@ public class AiModelService {
                 .model(modelName != null ? modelName : "")
                 .addSystemMessage(systemPrompt)
                 .addUserMessage(userPrompt)
-                .temperature(0.8)
-                .maxCompletionTokens(2048)
+                .temperature(modelTemperature)
+                .maxCompletionTokens(modelMaxTokens)
                 .build();
 
         ChatCompletion completion = openAiClient.chat().completions().create(params);

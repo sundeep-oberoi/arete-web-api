@@ -1,2 +1,2 @@
 # Issues
-- The Azure Foundry model is a Phi-4-reasoning that takes too long to respond. Add parameters to change temperature to 0.8 and max response to 2048
+- The Azure Foundry model is a Phi-4-reasoning that takes too long to respond. Add parameters to change temperature to 0.8 and max response to 2048. Use environment variables for these parameters
