@@ -14,25 +14,39 @@ import java.util.Map;
 
 <span class="fc" id="L15">    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);</span>
 
+    @ExceptionHandler(OfferNotFoundException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleOfferNotFound(OfferNotFoundException ex) {
+<span class="fc" id="L19">        log.warn(&quot;Offer not found: {}&quot;, ex.getMessage());</span>
+<span class="fc" id="L20">        return ResponseEntity.status(HttpStatus.NOT_FOUND)</span>
+<span class="fc" id="L21">                .body(Map.of(&quot;error&quot;, ex.getMessage()));</span>
+    }
+
+    @ExceptionHandler(OfferNotReadyException.class)
+    public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleOfferNotReady(OfferNotReadyException ex) {
+<span class="fc" id="L26">        log.info(&quot;Offer not ready, returning 202: {}&quot;, ex.getMessage());</span>
+<span class="fc" id="L27">        return ResponseEntity.status(HttpStatus.ACCEPTED)</span>
+<span class="fc" id="L28">                .body(Map.of(&quot;status&quot;, &quot;pending&quot;));</span>
+    }
+
     @ExceptionHandler(RoomCostExpiredException.class)
     public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleRoomCostExpired(RoomCostExpiredException ex) {
-<span class="fc" id="L19">        log.error(&quot;Room cost data expired: {}&quot;, ex.getMessage());</span>
-<span class="fc" id="L20">        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
-<span class="fc" id="L21">                .body(Map.of(&quot;error&quot;, ex.getMessage()));</span>
+<span class="fc" id="L33">        log.error(&quot;Room cost data expired: {}&quot;, ex.getMessage());</span>
+<span class="fc" id="L34">        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="fc" id="L35">                .body(Map.of(&quot;error&quot;, ex.getMessage()));</span>
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleIllegalArgument(IllegalArgumentException ex) {
-<span class="fc" id="L26">        log.warn(&quot;Bad request: {}&quot;, ex.getMessage());</span>
-<span class="fc" id="L27">        return ResponseEntity.badRequest()</span>
-<span class="fc" id="L28">                .body(Map.of(&quot;error&quot;, ex.getMessage()));</span>
+<span class="fc" id="L40">        log.warn(&quot;Bad request: {}&quot;, ex.getMessage());</span>
+<span class="fc" id="L41">        return ResponseEntity.badRequest()</span>
+<span class="fc" id="L42">                .body(Map.of(&quot;error&quot;, ex.getMessage()));</span>
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity&lt;Map&lt;String, String&gt;&gt; handleGeneral(Exception ex) {
-<span class="fc" id="L33">        log.error(&quot;Unexpected error&quot;, ex);</span>
-<span class="fc" id="L34">        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
-<span class="fc" id="L35">                .body(Map.of(&quot;error&quot;, &quot;An unexpected error occurred&quot;));</span>
+<span class="fc" id="L47">        log.error(&quot;Unexpected error&quot;, ex);</span>
+<span class="fc" id="L48">        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)</span>
+<span class="fc" id="L49">                .body(Map.of(&quot;error&quot;, &quot;An unexpected error occurred&quot;));</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

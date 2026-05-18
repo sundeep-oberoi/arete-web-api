@@ -1,7 +1,6 @@
 package com.arete.webapi.service;
 
 import com.arete.webapi.dto.FormData;
-import com.arete.webapi.dto.ai.PremiumResult;
 import com.arete.webapi.model.FormRecord;
 import com.arete.webapi.repository.FormRecordRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -11,7 +10,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -23,9 +24,6 @@ import static org.mockito.Mockito.*;
 class OfferWorkerServiceTest {
 
     @Mock
-    private AiModelService aiModelService;
-
-    @Mock
     private FormRecordRepository formRecordRepository;
 
     private OfferWorkerService workerService;
@@ -34,7 +32,10 @@ class OfferWorkerServiceTest {
 
     @BeforeEach
     void setUp() {
-        workerService = new OfferWorkerService(aiModelService, formRecordRepository, new ObjectMapper());
+        workerService = new OfferWorkerService(formRecordRepository, new ObjectMapper());
+        ReflectionTestUtils.setField(workerService, "minMonthlyPrice", 75.0);
+        ReflectionTestUtils.setField(workerService, "maxMonthlyPrice", 100.0);
+        ReflectionTestUtils.setField(workerService, "annualDiscount", 0.85);
 
         formData = new FormData();
         formData.setProfile("employee");
@@ -51,10 +52,9 @@ class OfferWorkerServiceTest {
     }
 
     @Test
-    void computeOffer_savesOfferToDatabase() {
+    void computeOffer_savesRandomOfferToDatabase() {
         FormRecord record = new FormRecord();
         record.setFormNumber("test-uuid");
-        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(85.0, 1020.0));
         when(formRecordRepository.findByFormNumber("test-uuid")).thenReturn(Optional.of(record));
         when(formRecordRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -64,27 +64,50 @@ class OfferWorkerServiceTest {
         verify(formRecordRepository).save(captor.capture());
 
         FormRecord saved = captor.getValue();
-        assertThat(saved.getMonthlyPremium()).isEqualByComparingTo("85.0");
-        assertThat(saved.getAnnualPremium()).isEqualByComparingTo("1020.0");
+        assertThat(saved.getMonthlyPremium()).isBetween(new BigDecimal("75.00"), new BigDecimal("100.00"));
+        BigDecimal expectedAnnual = saved.getMonthlyPremium()
+                .multiply(BigDecimal.valueOf(12))
+                .multiply(BigDecimal.valueOf(0.85))
+                .setScale(2, java.math.RoundingMode.HALF_UP);
+        assertThat(saved.getAnnualPremium()).isEqualByComparingTo(expectedAnnual);
         assertThat(saved.getCurrency()).isEqualTo("EUR");
         assertThat(saved.getCoverageDetails()).contains("Standard glasses or contact lenses");
     }
 
     @Test
-    void computeOffer_doesNotThrow_whenAiModelFails() {
-        when(aiModelService.fetchPremium(any())).thenThrow(new RuntimeException("AI unavailable"));
-
-        assertThatCode(() -> workerService.computeOffer("test-uuid", formData))
-                .doesNotThrowAnyException();
-    }
-
-    @Test
     void computeOffer_doesNotThrow_whenRecordNotFound() {
-        when(aiModelService.fetchPremium(any())).thenReturn(new PremiumResult(85.0, 1020.0));
         when(formRecordRepository.findByFormNumber("missing")).thenReturn(Optional.empty());
 
         assertThatCode(() -> workerService.computeOffer("missing", formData))
                 .doesNotThrowAnyException();
+    }
+
+    @Test
+    void generateMonthlyPrice_withinConfiguredRange() {
+        for (int i = 0; i < 50; i++) {
+            BigDecimal price = workerService.generateMonthlyPrice();
+            assertThat(price).isBetween(new BigDecimal("75.00"), new BigDecimal("100.00"));
+        }
+    }
+
+    @Test
+    void generateMonthlyPrice_handlesEqualMinAndMax() {
+        ReflectionTestUtils.setField(workerService, "minMonthlyPrice", 90.0);
+        ReflectionTestUtils.setField(workerService, "maxMonthlyPrice", 90.0);
+
+        BigDecimal price = workerService.generateMonthlyPrice();
+
+        assertThat(price).isEqualByComparingTo("90.00");
+    }
+
+    @Test
+    void generateMonthlyPrice_handlesSwappedMinAndMax() {
+        ReflectionTestUtils.setField(workerService, "minMonthlyPrice", 200.0);
+        ReflectionTestUtils.setField(workerService, "maxMonthlyPrice", 150.0);
+
+        BigDecimal price = workerService.generateMonthlyPrice();
+
+        assertThat(price).isBetween(new BigDecimal("150.00"), new BigDecimal("200.00"));
     }
 
     // ── buildCoverageDetails ──────────────────────────────────────────────────

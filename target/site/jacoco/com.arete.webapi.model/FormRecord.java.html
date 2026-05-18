@@ -60,68 +60,80 @@ import java.time.LocalDateTime;
     @Column(name = &quot;annual_premium&quot;)
     private BigDecimal annualPremium;
 
+    @Column(name = &quot;currency&quot;)
+    private String currency;
+
+    @Column(name = &quot;coverage_details&quot;, columnDefinition = &quot;CLOB&quot;)
+    private String coverageDetails;
+
     @Column(name = &quot;created_at&quot;)
     private LocalDateTime createdAt;
 
     @PrePersist
     protected void onCreate() {
-<span class="nc" id="L68">        createdAt = LocalDateTime.now();</span>
-<span class="nc" id="L69">    }</span>
+<span class="nc" id="L74">        createdAt = LocalDateTime.now();</span>
+<span class="nc" id="L75">    }</span>
 
-<span class="nc" id="L71">    public Long getId() { return id; }</span>
-<span class="nc" id="L72">    public void setId(Long id) { this.id = id; }</span>
+<span class="nc" id="L77">    public Long getId() { return id; }</span>
+<span class="nc" id="L78">    public void setId(Long id) { this.id = id; }</span>
 
-<span class="fc" id="L74">    public String getFormNumber() { return formNumber; }</span>
-<span class="fc" id="L75">    public void setFormNumber(String formNumber) { this.formNumber = formNumber; }</span>
+<span class="fc" id="L80">    public String getFormNumber() { return formNumber; }</span>
+<span class="fc" id="L81">    public void setFormNumber(String formNumber) { this.formNumber = formNumber; }</span>
 
-<span class="fc" id="L77">    public String getEmailAddress() { return emailAddress; }</span>
-<span class="fc" id="L78">    public void setEmailAddress(String emailAddress) { this.emailAddress = emailAddress; }</span>
+<span class="fc" id="L83">    public String getEmailAddress() { return emailAddress; }</span>
+<span class="fc" id="L84">    public void setEmailAddress(String emailAddress) { this.emailAddress = emailAddress; }</span>
 
-<span class="fc" id="L80">    public String getProfile() { return profile; }</span>
-<span class="fc" id="L81">    public void setProfile(String profile) { this.profile = profile; }</span>
+<span class="fc" id="L86">    public String getProfile() { return profile; }</span>
+<span class="fc" id="L87">    public void setProfile(String profile) { this.profile = profile; }</span>
 
-<span class="fc" id="L83">    public boolean isCoverPartner() { return coverPartner; }</span>
-<span class="fc" id="L84">    public void setCoverPartner(boolean coverPartner) { this.coverPartner = coverPartner; }</span>
+<span class="fc" id="L89">    public boolean isCoverPartner() { return coverPartner; }</span>
+<span class="fc" id="L90">    public void setCoverPartner(boolean coverPartner) { this.coverPartner = coverPartner; }</span>
 
-<span class="nc" id="L86">    public boolean isCoverChildren() { return coverChildren; }</span>
-<span class="fc" id="L87">    public void setCoverChildren(boolean coverChildren) { this.coverChildren = coverChildren; }</span>
+<span class="nc" id="L92">    public boolean isCoverChildren() { return coverChildren; }</span>
+<span class="fc" id="L93">    public void setCoverChildren(boolean coverChildren) { this.coverChildren = coverChildren; }</span>
 
-<span class="nc" id="L89">    public int getNumberOfChildren() { return numberOfChildren; }</span>
-<span class="fc" id="L90">    public void setNumberOfChildren(int numberOfChildren) { this.numberOfChildren = numberOfChildren; }</span>
+<span class="nc" id="L95">    public int getNumberOfChildren() { return numberOfChildren; }</span>
+<span class="fc" id="L96">    public void setNumberOfChildren(int numberOfChildren) { this.numberOfChildren = numberOfChildren; }</span>
 
-<span class="nc" id="L92">    public String getAge() { return age; }</span>
-<span class="fc" id="L93">    public void setAge(String age) { this.age = age; }</span>
+<span class="nc" id="L98">    public String getAge() { return age; }</span>
+<span class="fc" id="L99">    public void setAge(String age) { this.age = age; }</span>
 
-<span class="nc" id="L95">    public String getPostcode() { return postcode; }</span>
-<span class="fc" id="L96">    public void setPostcode(String postcode) { this.postcode = postcode; }</span>
+<span class="nc" id="L101">    public String getPostcode() { return postcode; }</span>
+<span class="fc" id="L102">    public void setPostcode(String postcode) { this.postcode = postcode; }</span>
 
-<span class="nc" id="L98">    public String getOpticalNeeds() { return opticalNeeds; }</span>
-<span class="fc" id="L99">    public void setOpticalNeeds(String opticalNeeds) { this.opticalNeeds = opticalNeeds; }</span>
+<span class="nc" id="L104">    public String getOpticalNeeds() { return opticalNeeds; }</span>
+<span class="fc" id="L105">    public void setOpticalNeeds(String opticalNeeds) { this.opticalNeeds = opticalNeeds; }</span>
 
-<span class="nc" id="L101">    public String getDentalNeeds() { return dentalNeeds; }</span>
-<span class="fc" id="L102">    public void setDentalNeeds(String dentalNeeds) { this.dentalNeeds = dentalNeeds; }</span>
+<span class="nc" id="L107">    public String getDentalNeeds() { return dentalNeeds; }</span>
+<span class="fc" id="L108">    public void setDentalNeeds(String dentalNeeds) { this.dentalNeeds = dentalNeeds; }</span>
 
-<span class="nc" id="L104">    public String getAlternativeMedicine() { return alternativeMedicine; }</span>
-<span class="fc" id="L105">    public void setAlternativeMedicine(String alternativeMedicine) { this.alternativeMedicine = alternativeMedicine; }</span>
+<span class="nc" id="L110">    public String getAlternativeMedicine() { return alternativeMedicine; }</span>
+<span class="fc" id="L111">    public void setAlternativeMedicine(String alternativeMedicine) { this.alternativeMedicine = alternativeMedicine; }</span>
 
-<span class="nc" id="L107">    public String getHospitalisationPreference() { return hospitalisationPreference; }</span>
+<span class="nc" id="L113">    public String getHospitalisationPreference() { return hospitalisationPreference; }</span>
     public void setHospitalisationPreference(String hospitalisationPreference) {
-<span class="fc" id="L109">        this.hospitalisationPreference = hospitalisationPreference;</span>
-<span class="fc" id="L110">    }</span>
+<span class="fc" id="L115">        this.hospitalisationPreference = hospitalisationPreference;</span>
+<span class="fc" id="L116">    }</span>
 
-<span class="nc" id="L112">    public String getDoctorChoice() { return doctorChoice; }</span>
-<span class="fc" id="L113">    public void setDoctorChoice(String doctorChoice) { this.doctorChoice = doctorChoice; }</span>
+<span class="nc" id="L118">    public String getDoctorChoice() { return doctorChoice; }</span>
+<span class="fc" id="L119">    public void setDoctorChoice(String doctorChoice) { this.doctorChoice = doctorChoice; }</span>
 
-<span class="nc" id="L115">    public String getPhoneNumber() { return phoneNumber; }</span>
-<span class="fc" id="L116">    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }</span>
+<span class="nc" id="L121">    public String getPhoneNumber() { return phoneNumber; }</span>
+<span class="fc" id="L122">    public void setPhoneNumber(String phoneNumber) { this.phoneNumber = phoneNumber; }</span>
 
-<span class="fc" id="L118">    public BigDecimal getMonthlyPremium() { return monthlyPremium; }</span>
-<span class="fc" id="L119">    public void setMonthlyPremium(BigDecimal monthlyPremium) { this.monthlyPremium = monthlyPremium; }</span>
+<span class="fc" id="L124">    public BigDecimal getMonthlyPremium() { return monthlyPremium; }</span>
+<span class="fc" id="L125">    public void setMonthlyPremium(BigDecimal monthlyPremium) { this.monthlyPremium = monthlyPremium; }</span>
 
-<span class="fc" id="L121">    public BigDecimal getAnnualPremium() { return annualPremium; }</span>
-<span class="fc" id="L122">    public void setAnnualPremium(BigDecimal annualPremium) { this.annualPremium = annualPremium; }</span>
+<span class="fc" id="L127">    public BigDecimal getAnnualPremium() { return annualPremium; }</span>
+<span class="fc" id="L128">    public void setAnnualPremium(BigDecimal annualPremium) { this.annualPremium = annualPremium; }</span>
 
-<span class="nc" id="L124">    public LocalDateTime getCreatedAt() { return createdAt; }</span>
-<span class="nc" id="L125">    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }</span>
+<span class="fc" id="L130">    public String getCurrency() { return currency; }</span>
+<span class="fc" id="L131">    public void setCurrency(String currency) { this.currency = currency; }</span>
+
+<span class="fc" id="L133">    public String getCoverageDetails() { return coverageDetails; }</span>
+<span class="fc" id="L134">    public void setCoverageDetails(String coverageDetails) { this.coverageDetails = coverageDetails; }</span>
+
+<span class="nc" id="L136">    public LocalDateTime getCreatedAt() { return createdAt; }</span>
+<span class="nc" id="L137">    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

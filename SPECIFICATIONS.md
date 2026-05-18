@@ -16,13 +16,10 @@
 - Returns a unique form number
 
 ## Worker thread in Save Form API
-- The worker thread fetch the offer price from an Azure Foundry model 
-- The model name is 'Phi-4-reasoning-1'
-- Add an environment variable for the URL to the model API
-- Add an environment variable for the model API key
-- Create a system prompt to use with the model. Add an environment variable to keep the system prompt configurable
-- Create a templated user prompt with the form data elements as parameters. Add an environment variable to keep the user prompt configurable
-- Use the system and user prompt to get the offer price from the model
+- The worker thread creates the offer price randomly
+- Add environment variables for the minimum and maximum monthly price, default is 75 to 100 EUR
+- The annual price is monthly x 12 x discount
+- Add environment variable to discount the annual price, default is 0.85
 - Save the offer price to the database. Use same database table as /save-form API
 
 ## Offer/{UUID} API

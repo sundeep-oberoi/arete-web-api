@@ -3,6 +3,7 @@
 import com.arete.webapi.dto.FormData;
 import com.arete.webapi.dto.OfferResponse;
 import com.arete.webapi.dto.RoomCostResponse;
+import com.arete.webapi.dto.SaveFormResponse;
 import com.arete.webapi.dto.SaveLeaveEmailRequest;
 import com.arete.webapi.service.FormService;
 import com.arete.webapi.service.RoomCostService;
@@ -15,43 +16,47 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping
 public class FormController {
 
-<span class="fc" id="L18">    private static final Logger log = LoggerFactory.getLogger(FormController.class);</span>
+<span class="fc" id="L19">    private static final Logger log = LoggerFactory.getLogger(FormController.class);</span>
 
     private final RoomCostService roomCostService;
     private final FormService formService;
 
-<span class="fc" id="L23">    public FormController(RoomCostService roomCostService, FormService formService) {</span>
-<span class="fc" id="L24">        this.roomCostService = roomCostService;</span>
-<span class="fc" id="L25">        this.formService = formService;</span>
-<span class="fc" id="L26">    }</span>
+<span class="fc" id="L24">    public FormController(RoomCostService roomCostService, FormService formService) {</span>
+<span class="fc" id="L25">        this.roomCostService = roomCostService;</span>
+<span class="fc" id="L26">        this.formService = formService;</span>
+<span class="fc" id="L27">    }</span>
 
     @PostMapping(&quot;/room-cost&quot;)
     public ResponseEntity&lt;RoomCostResponse&gt; getRoomCost(@RequestBody FormData formData) {
-<span class="fc" id="L30">        log.info(&quot;POST /room-cost received&quot;);</span>
-<span class="fc" id="L31">        RoomCostResponse response = roomCostService.getRoomCost();</span>
-<span class="fc" id="L32">        return ResponseEntity.ok(response);</span>
+<span class="fc" id="L31">        log.info(&quot;POST /room-cost received&quot;);</span>
+<span class="fc" id="L32">        return ResponseEntity.ok(roomCostService.getRoomCost());</span>
     }
 
     @PostMapping(&quot;/save-leave-email&quot;)
     public ResponseEntity&lt;Void&gt; saveLeaveEmail(@RequestBody SaveLeaveEmailRequest request) {
 <span class="fc" id="L37">        log.info(&quot;POST /save-leave-email received for email: {}&quot;, request.getEmail());</span>
-
-<span class="pc bpc" id="L39" title="1 of 4 branches missed.">        if (request.getEmail() == null || request.getEmail().isBlank()) {</span>
-<span class="fc" id="L40">            throw new IllegalArgumentException(&quot;Email is required&quot;);</span>
+<span class="pc bpc" id="L38" title="1 of 4 branches missed.">        if (request.getEmail() == null || request.getEmail().isBlank()) {</span>
+<span class="fc" id="L39">            throw new IllegalArgumentException(&quot;Email is required&quot;);</span>
         }
-<span class="fc bfc" id="L42" title="All 2 branches covered.">        if (request.getFormData() == null) {</span>
-<span class="fc" id="L43">            throw new IllegalArgumentException(&quot;Form data is required&quot;);</span>
+<span class="fc bfc" id="L41" title="All 2 branches covered.">        if (request.getFormData() == null) {</span>
+<span class="fc" id="L42">            throw new IllegalArgumentException(&quot;Form data is required&quot;);</span>
         }
-
-<span class="fc" id="L46">        formService.saveLeaveEmail(request.getEmail(), request.getFormData());</span>
-<span class="fc" id="L47">        return ResponseEntity.noContent().build();</span>
+<span class="fc" id="L44">        formService.saveLeaveEmail(request.getEmail(), request.getFormData());</span>
+<span class="fc" id="L45">        return ResponseEntity.noContent().build();</span>
     }
 
-    @PostMapping(&quot;/offer&quot;)
-    public ResponseEntity&lt;OfferResponse&gt; getOffer(@RequestBody FormData formData) {
-<span class="fc" id="L52">        log.info(&quot;POST /offer received for profile: {}&quot;, formData.getProfile());</span>
-<span class="fc" id="L53">        OfferResponse response = formService.calculateOffer(formData);</span>
-<span class="fc" id="L54">        return ResponseEntity.ok(response);</span>
+    @PostMapping(&quot;/save-form&quot;)
+    public ResponseEntity&lt;SaveFormResponse&gt; saveForm(@RequestBody FormData formData) {
+<span class="fc" id="L50">        log.info(&quot;POST /save-form received for profile: {}&quot;, formData.getProfile());</span>
+<span class="fc" id="L51">        String uuid = formService.saveForm(formData);</span>
+<span class="fc" id="L52">        return ResponseEntity.ok(new SaveFormResponse(uuid));</span>
+    }
+
+    @GetMapping(&quot;/offer/{uuid}&quot;)
+    public ResponseEntity&lt;OfferResponse&gt; getOffer(@PathVariable String uuid) {
+<span class="fc" id="L57">        log.info(&quot;GET /offer/{} received&quot;, uuid);</span>
+<span class="fc" id="L58">        OfferResponse response = formService.getOffer(uuid);</span>
+<span class="fc" id="L59">        return ResponseEntity.ok(response);</span>
     }
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

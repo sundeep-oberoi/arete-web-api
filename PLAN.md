@@ -21,7 +21,7 @@ Base path: `/api/msf` (server.servlet.context-path)
 
 ## Async Offer Flow
 1. `POST /save-form` saves form data to DB (premium fields null), triggers `OfferWorkerService.computeOffer()` on a Spring async thread, returns the UUID immediately.
-2. Worker thread calls Azure AI Foundry model, saves `monthly_premium`, `annual_premium`, `currency`, `coverage_details` back to the same DB row.
+2. Worker thread generates a random monthly premium in EUR between `offer.price.min.monthly` and `offer.price.max.monthly` (default 75–100), computes `annual = monthly * 12 * offer.price.annual.discount` (default discount 0.85), and saves `monthly_premium`, `annual_premium`, `currency`, `coverage_details` back to the same DB row.
 3. `GET /offer/{uuid}` reads the row; if premium is null it waits 60 s (`offer.wait.ms`), reads again, and returns 202 if still null — allowing the React UI to retry up to 5 times.
 
 ## Database Schema
@@ -67,13 +67,16 @@ Base path: `/api/msf` (server.servlet.context-path)
 
 | Variable                  | Default                        | Purpose                          |
 |---------------------------|--------------------------------|----------------------------------|
-| H2_DATABASE_PATH          | /data/aretedb                  | H2 file path                     |
-| REINITIALIZE_DB           | false                          | Force DB re-init on startup      |
-| MODEL_API_URL             | (required for AI)              | Azure AI Foundry endpoint URL    |
-| MODEL_API_KEY             | (required for AI)              | Azure AI Foundry API key         |
-| MODEL_NAME                | Phi-4-reasoning-1              | Model name to use                |
-| MODEL_SYSTEM_PROMPT       | (built-in default)             | Configurable system prompt       |
-| MODEL_USER_PROMPT_TEMPLATE| (built-in default)             | Templated user prompt            |
+| H2_DATABASE_PATH            | /data/aretedb                  | H2 file path                              |
+| REINITIALIZE_DB             | false                          | Force DB re-init on startup               |
+| OFFER_PRICE_MIN_MONTHLY     | 75                             | Minimum random monthly premium (EUR)      |
+| OFFER_PRICE_MAX_MONTHLY     | 100                            | Maximum random monthly premium (EUR)      |
+| OFFER_PRICE_ANNUAL_DISCOUNT | 0.85                           | Annual discount factor (annual = m×12×d)  |
+| MODEL_API_URL               | (optional)                     | Azure AI Foundry endpoint URL (legacy)    |
+| MODEL_API_KEY               | (optional)                     | Azure AI Foundry API key (legacy)         |
+| MODEL_NAME                  | Phi-4-reasoning-1              | Model name (legacy, not used by worker)   |
+| MODEL_SYSTEM_PROMPT         | (built-in default)             | Configurable system prompt (legacy)       |
+| MODEL_USER_PROMPT_TEMPLATE  | (built-in default)             | Templated user prompt (legacy)            |
 
 ## Package Structure
 ```
@@ -114,7 +117,7 @@ com.arete.webapi
 - **room-cost**: reads single active config row; if `valid_upto_date` < today → 500
 - **save-leave-email**: generates UUID form_number, saves form data + email; returns 204
 - **save-form**: generates UUID, saves form (premiums null), triggers async worker; returns `{uuid}`
-- **offer worker**: calls Azure Foundry `Phi-4-reasoning-1`, builds coverage detail strings, saves premium + currency + coverage back to DB row
+- **offer worker**: generates random monthly premium in [min, max] EUR, annual = monthly × 12 × discount, builds coverage detail strings, saves premium + currency + coverage back to DB row
 - **offer/{uuid}**: reads row; if premium null waits 60 s; if still null returns 202 for client retry; if ready returns full offer
 
 ## Testing Strategy
